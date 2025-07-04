@@ -1,0 +1,5 @@
+LIBRARY source-match.dll
+
+EXPORTS
+	do_get_plugin_descriptors
+	do_run_plugin

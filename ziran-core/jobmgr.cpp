@@ -1,0 +1,117 @@
+#include "jobmgr.h"
+
+#include <array>
+
+CJob_Mgr::CJob_Mgr(const TConfig& cfg) : mConfig(cfg)
+{
+	//
+}
+
+bool CJob_Mgr::Start(std::vector<std::string>& log)
+{
+	Network_Init();
+	mRunning = true;
+
+	mSocket = socket(AF_INET, SOCK_DGRAM, 0);
+	if (mSocket < 0) {
+		log.push_back("cannot create socket");
+		return false;
+	}
+
+	mMyAddr.sin_family = AF_INET;
+	mMyAddr.sin_port = htons(mConfig.bindPort);
+	if (inet_pton(AF_INET, mConfig.bindIpString.c_str(), &mMyAddr.sin_addr.s_addr) != 1) {
+		log.push_back("could not resolve bind host " + mConfig.bindIpString);
+		return false;
+	}
+
+	int result;
+
+	result = bind(mSocket, reinterpret_cast<sockaddr*>(&mMyAddr), sizeof(mMyAddr));
+	if (result != 0) {
+		log.push_back("could not bind to given address: " + mConfig.bindIpString + ":" + std::to_string(mConfig.bindPort));
+		return false;
+	}
+
+	listen(mSocket, 10);
+
+	mThread = std::make_unique<std::thread>(&CJob_Mgr::Thread_Fnc, this);
+
+	return true;
+}
+
+void CJob_Mgr::Stop()
+{
+	// lock scope
+	{
+		std::unique_lock<std::mutex> lck(mMtx);
+
+		mRunning = false;
+		closesocket(mSocket);
+	}
+
+	if (mThread && mThread->joinable())
+		mThread->join();
+
+	Network_Deinit();
+}
+
+void CJob_Mgr::Thread_Fnc()
+{
+	sockaddr_in addr;
+	int addrLen = sizeof(addr);
+
+	std::array<char, 128> buffer;
+
+	const std::string WakeUpStr{ "WAKEUP" };
+	const std::string ReloadStr{ "RELOAD" };
+
+	while (mRunning)
+	{
+		std::fill(buffer.begin(), buffer.end(), '\0');
+
+		int result = recvfrom(mSocket, buffer.data(), static_cast<int>(buffer.size()), 0, reinterpret_cast<sockaddr*>(&addr), &addrLen);
+		if (result < buffer.size() - 1)
+			buffer[result] = '\0';
+
+		if (result == static_cast<int>(WakeUpStr.size()) && std::string{ buffer.data() } == WakeUpStr)
+		{
+			std::unique_lock<std::mutex> lck(mMtx);
+
+			mSignalized = true;
+			mCv.notify_all();
+
+			sendto(mSocket, "OK", 2, 0, reinterpret_cast<sockaddr*>(&addr), addrLen);
+		}
+		else if (result == static_cast<int>(ReloadStr.size()) && std::string{ buffer.data() } == ReloadStr)
+		{
+			std::unique_lock<std::mutex> lck(mMtx);
+
+			mSignalized = true;
+			mShould_Reload = true;
+			mCv.notify_all();
+
+			sendto(mSocket, "OK", 2, 0, reinterpret_cast<sockaddr*>(&addr), addrLen);
+		}
+	}
+}
+
+NWakeUp_Reason CJob_Mgr::Await()
+{
+	std::unique_lock<std::mutex> lck(mMtx);
+
+	while (!mSignalized && mRunning)
+		mCv.wait(lck);
+
+	bool isSuccess = mRunning && mSignalized;
+
+	mSignalized = false;
+
+	if (!isSuccess)
+		return NWakeUp_Reason::None;
+
+	if (mShould_Reload)
+		return NWakeUp_Reason::Reload;
+
+	return NWakeUp_Reason::Job;
+}
