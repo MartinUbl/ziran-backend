@@ -26,6 +26,13 @@ namespace ziran
 
 		// implodes a vector of strings to a string
 		std::string implode(const std::vector<std::string>& vec, const std::string& delimiter = ", ");
+
+		// replaces all occurrences of a substring in a string with another substring
+		std::string replace_all(const std::string& str, const std::string& from, const std::string& to);
+
+		// finds a difference between two strings and returns a string with the differences highlighted in HTML format
+		std::string stringDiffHTML(const std::string& a, const std::string& b);
+		std::string stringWordDiffHTML(const std::string& a, const std::string& b);
 	}
 
 	namespace proc

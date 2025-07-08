@@ -1,4 +1,4 @@
-#include "execmatch.h"
+﻿#include "execmatch.h"
 
 #include <regex>
 
@@ -74,7 +74,15 @@ HRESULT CExec_Output_Match_Plugin::Run()
 
 	res = ziran::proc::execute(std::string(execName) + " " + mParameters, mInclude_Stderr, mStdin_Contents);
 	if (mExit_Code != Invalid_Exit_Code && mExit_Code != res.exitstatus) {
-		mReporter.Report(ziran::NJob_Report_Type::Error, ("Program exited with status code " + std::to_string(res.exitstatus) + (mShow_Expected ? ", expected " + std::to_string(mExit_Code) : "")).c_str(), "output");
+
+		const std::string errorMsg = "Program skončil s jiným návratovým kódem, než bylo očekáváno.";
+		std::string htmlDecoratedErrorMsg = "Program skončil s návratovým kódem <span class=\"wrong\">" + std::to_string(res.exitstatus) + "</span>";
+
+		if (mShow_Expected) {
+			htmlDecoratedErrorMsg += "<br />Byl však očekáván <span class=\"correct\">" + std::to_string(mExit_Code) + "</span>";
+		}
+
+		mReporter.Report(ziran::NJob_Report_Type::Error, errorMsg.c_str(), "output", htmlDecoratedErrorMsg.c_str());
 		return E_FAIL;
 	}
 
@@ -83,7 +91,21 @@ HRESULT CExec_Output_Match_Plugin::Run()
 	if (mMode == NMatch_Mode::Exact)
 	{
 		if (actualOutput != mMatch_String) {
-			mReporter.Report(ziran::NJob_Report_Type::Error, ("Program output does not match. Actual output:\n " + actualOutput + (mShow_Expected ? "\n\n, expected:\n" + mMatch_String : "")).c_str(), "output");
+
+			// handle both cases of newlines in output
+			auto actualOutputWithNewlines = ziran::string::replace_all(actualOutput, "\r\n", "<br />");
+			actualOutputWithNewlines = ziran::string::replace_all(actualOutputWithNewlines, "\n", "<br />");
+
+			// If the output does not match, report the error
+			const std::string errorMsg = "Výstup programu nesouhlasí s očekáváním.";
+			std::string htmlDecoratedErrorMsg = "Výstup programu nesouhlasí s očekáváním.";
+			if (mShow_Expected) {
+				htmlDecoratedErrorMsg += " Výpis rozdílů:<br /><br />" + ziran::string::stringWordDiffHTML(actualOutput, mMatch_String);
+			}
+			else {
+				htmlDecoratedErrorMsg += " Výstup programu:<br /><br />" + actualOutput;
+			}
+			mReporter.Report(ziran::NJob_Report_Type::Error, errorMsg.c_str(), "output", htmlDecoratedErrorMsg.c_str());
 			return E_FAIL;
 		}
 	}
@@ -93,16 +115,29 @@ HRESULT CExec_Output_Match_Plugin::Run()
 		std::smatch match;
 
 		if (!std::regex_match(actualOutput, match, r)) {
-			mReporter.Report(ziran::NJob_Report_Type::Error, ("Program output does not match. Actual output:\n " + actualOutput + (mShow_Expected ? "\n\n, expected regular expression match to:\n" + mMatch_String : "")).c_str(), "output");
+
+			// If the output does not match, report the error
+			auto actualOutputWithNewlines = ziran::string::replace_all(actualOutput, "\r\n", "<br />");
+			actualOutputWithNewlines = ziran::string::replace_all(actualOutputWithNewlines, "\n", "<br />");
+
+			std::string htmlDecoratedErrorMsg = "Výstup programu neodpovídá požadovanému regulárnímu výrazu. Výstup programu:<br /><br />" + actualOutputWithNewlines;
+
+			if (mShow_Expected) {
+				htmlDecoratedErrorMsg += "<br />Regulární výraz, který měl být splněn:\n" + mMatch_String;
+			}
+
+			const std::string errorMsg = "Výstup programu neodpovídá požadovanému regulárnímu výrazu.";
+
+			mReporter.Report(ziran::NJob_Report_Type::Error, errorMsg.c_str(), "output", htmlDecoratedErrorMsg.c_str());
 			return E_FAIL;
 		}
 	}
 
 	if (mTest_Name.empty()) {
-		mReporter.Report(ziran::NJob_Report_Type::Info, "Output validation OK", "output");
+		mReporter.Report(ziran::NJob_Report_Type::Info, "Výstup byl úspěšně validován", "output");
 	}
 	else {
-		mReporter.Report(ziran::NJob_Report_Type::Info, ("Output validation '" + mTest_Name  +"' OK").c_str(), "output");
+		mReporter.Report(ziran::NJob_Report_Type::Info, ("Výstup byl úspěšně validován ('" + mTest_Name  +"')").c_str(), "output");
 	}
 
 	return S_OK;

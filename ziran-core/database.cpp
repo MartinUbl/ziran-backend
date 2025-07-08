@@ -102,7 +102,8 @@ bool CDatabase_Handler::Init_Statements(std::vector<std::string>& log)
 		{ mStmt_Get_Job_By_Name, "SELECT id, name, status, output, pipeline_id FROM job WHERE name = ?" },
 		{ mStmt_Set_Job_Status, "UPDATE job SET status = ? WHERE id = ?" },
 		{ mStmt_Set_Job_Output, "UPDATE job SET output = ? WHERE id = ?"},
-		{ mStmt_Add_Job_Report, "INSERT INTO job_report (job_id, log_type, log_identifier, value) VALUES (?, ?, ?, ?)" }
+		{ mStmt_Add_Job_Report, "INSERT INTO job_report (job_id, log_type, log_identifier, value, extended_value) VALUES (?, ?, ?, ?, ?)" },
+		{ mStmt_Set_Job_Processed_On, "UPDATE job SET processed_on = FROM_UNIXTIME(?) WHERE id = ?" }
 	};
 
 	// prepare all
@@ -473,6 +474,29 @@ bool CDatabase_Handler::Set_Job_Status(TJob_Id job_id, NJob_Status status)
 	return false;
 }
 
+bool CDatabase_Handler::Set_Job_Processed_Timestamp(TJob_Id job_id, time_t timestamp) {
+	MYSQL_BIND param_bind[2];
+
+	memset(param_bind, 0, sizeof(param_bind));
+	param_bind[0].buffer_type = MYSQL_TYPE_LONG;
+	param_bind[0].buffer = reinterpret_cast<char*>(&timestamp);
+	param_bind[0].is_null = 0;
+	param_bind[0].length = 0;
+
+	param_bind[1].buffer_type = MYSQL_TYPE_LONG;
+	param_bind[1].buffer = reinterpret_cast<char*>(&job_id);
+	param_bind[1].is_null = 0;
+	param_bind[1].length = 0;
+	auto result = mysql_stmt_bind_param(mStmt_Set_Job_Processed_On, param_bind);
+	if (result != 0)
+		return false;
+	result = mysql_stmt_execute(mStmt_Set_Job_Processed_On);
+	if (result != 0)
+		return false;
+	mysql_stmt_reset(mStmt_Set_Job_Processed_On);
+	return true;
+}
+
 bool CDatabase_Handler::Set_Job_Output(TJob_Id job_id, NJob_Output status)
 {
 	MYSQL_BIND param_bind[2];
@@ -511,9 +535,9 @@ bool CDatabase_Handler::Set_Job_Output(TJob_Id job_id, NJob_Output status)
 	return false;
 }
 
-bool CDatabase_Handler::Add_Job_Report(TJob_Id job_id, ziran::NJob_Report_Type type, const std::string& value, std::optional<std::string> identifier)
+bool CDatabase_Handler::Add_Job_Report(TJob_Id job_id, ziran::NJob_Report_Type type, const std::string& value, std::optional<std::string> identifier, std::optional<std::string> extendedHTMLValue)
 {
-	MYSQL_BIND param_bind[4];
+	MYSQL_BIND param_bind[5];
 
 	memset(param_bind, 0, sizeof(param_bind));
 	std::string typeStr;
@@ -550,6 +574,21 @@ bool CDatabase_Handler::Add_Job_Report(TJob_Id job_id, ziran::NJob_Report_Type t
 	param_bind[3].is_null = 0;
 	param_bind[3].buffer_length = parLen3;
 	param_bind[3].length = &parLen3;
+
+	if (extendedHTMLValue.has_value())
+	{
+		unsigned long parLen4 = static_cast<unsigned long>(extendedHTMLValue.value().size());
+		param_bind[4].buffer_type = MYSQL_TYPE_STRING;
+		param_bind[4].buffer = const_cast<char*>(extendedHTMLValue.value().c_str());
+		param_bind[4].is_null = 0;
+		param_bind[4].buffer_length = parLen4;
+		param_bind[4].length = &parLen4;
+	}
+	else
+	{
+		param_bind[4].buffer_type = MYSQL_TYPE_NULL;
+		param_bind[4].is_null = &isnull;
+	}
 
 	auto result = mysql_stmt_bind_param(mStmt_Add_Job_Report, param_bind);
 	if (result != 0)

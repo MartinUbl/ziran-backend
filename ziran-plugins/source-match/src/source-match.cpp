@@ -1,4 +1,4 @@
-#include "source-match.h"
+﻿#include "source-match.h"
 
 #include <fstream>
 #include <sstream>
@@ -163,7 +163,7 @@ HRESULT CSource_Match_Plugin::Run()
 {
 	if (!Build_Trie())
 	{
-		mReporter.Report(ziran::NJob_Report_Type::Error, "Could not build trie", "runtime");
+		mReporter.Report(ziran::NJob_Report_Type::Error, "Nelze sestavit ověřovací strom", "runtime");
 		return E_FAIL;
 	}
 
@@ -187,13 +187,13 @@ HRESULT CSource_Match_Plugin::Run()
 	if (!validationSuccess) {
 
 		for (auto match : matches) {
-			std::string mfail = "File " + match.filePath + " contains an invalid word (" + match.match + ")!";
+			std::string mfail = "Soubor " + match.filePath + " obsahuje zakázaný řetězec (" + match.match + ")!";
 			mReporter.Report(ziran::NJob_Report_Type::Error, mfail.c_str(), "static");
 		}
 		return E_UNEXPECTED;
 	}
 	else {
-		mReporter.Report(ziran::NJob_Report_Type::Info, "Successfully validated for source code word presence", "static");
+		mReporter.Report(ziran::NJob_Report_Type::Info, "Přeběžná kontrola obsahu zdrojových souborů proběhla úspěšně.", "static");
 	}
 
 	return S_OK;

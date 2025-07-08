@@ -1,4 +1,4 @@
-#include "build-cmake.h"
+﻿#include "build-cmake.h"
 #include "../../../ziran-shared/plugin_utils.h"
 
 #include <queue>
@@ -125,17 +125,17 @@ HRESULT CBuild_CMake_Plugin::Run() {
 	}
 
 	if (!match) {
-		mReporter.Report(ziran::NJob_Report_Type::Error, "The job does not contain any CMakeLists.txt file", "build");
+		mReporter.Report(ziran::NJob_Report_Type::Error, "Odevzdaný archiv neobsahuje soubor CMakeLists.txt", "build");
 		return E_FAIL;
 	}
 
 	if (exeName.empty()) {
-		mReporter.Report(ziran::NJob_Report_Type::Error, "No executables found to be build in CMakeLists.txt hierarchy", "build");
+		mReporter.Report(ziran::NJob_Report_Type::Error, "V zadané adresářové struktuře nebyl nalezen žádný spustitelný CMake cíl.", "build");
 		return E_FAIL;
 	}
 
 	if (exeName.size() > 1) {
-		mReporter.Report(ziran::NJob_Report_Type::Error, ("CMakeLists.txt file specifies more executables to be built: " + ziran::string::implode(exeName)).c_str(), "build");
+		mReporter.Report(ziran::NJob_Report_Type::Error, ("CMakeLists.txt obsahuje více spustitelných cílů: " + ziran::string::implode(exeName)).c_str(), "build");
 		return E_FAIL;
 	}
 
@@ -150,14 +150,29 @@ HRESULT CBuild_CMake_Plugin::Run() {
 	// configure CMake
 	res = ziran::proc::execute("cmake .. -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=\"" + Compiled_Directory + "\" -DCMAKE_BUILD_TYPE=\"" + Build_Type_String + "\"", true);
 	if (res.exitstatus != 0) {
-		mReporter.Report(ziran::NJob_Report_Type::Error, ("CMake configuration step failed. Output: \n" + res.output).c_str(), "build");
+
+		// replace all newlines with <br/> for HTML formatting
+		auto escOutput = ziran::string::replace_all(res.output, "\r\n", "<br/>");
+		escOutput = ziran::string::replace_all(escOutput, "\n", "<br/>");
+
+		const std::string errorMsg = "Konfigurační krok CMake selhal.";
+		const std::string htmlFormattedErrorMsg = "CMake konfigurační krok selhal s následujícím výstupem:<br/><br/>" + escOutput;
+
+		mReporter.Report(ziran::NJob_Report_Type::Error, errorMsg.c_str(), "build", htmlFormattedErrorMsg.c_str());
 		return E_FAIL;
 	}
 
 	// build target
 	res = ziran::proc::execute("cmake --build . --config " + Build_Type_String, true);
 	if (res.exitstatus != 0) {
-		mReporter.Report(ziran::NJob_Report_Type::Error, ("CMake build step failed. Output: \n" + res.output).c_str(), "build");
+		// replace all newlines with <br/> for HTML formatting
+		auto escOutput = ziran::string::replace_all(res.output, "\r\n", "<br/>");
+		escOutput = ziran::string::replace_all(escOutput, "\n", "<br/>");
+
+		const std::string errorMsg = "Kompilace prostřednictvím nástroje CMake selhala.";
+		const std::string htmlFormattedErrorMsg = "Kompilace prostřednictvím nástroje CMake selhala s následujícím výstupem:<br/><br/>" + escOutput;
+
+		mReporter.Report(ziran::NJob_Report_Type::Error, errorMsg.c_str(), "build", htmlFormattedErrorMsg.c_str());
 		return E_FAIL;
 	}
 
@@ -187,7 +202,7 @@ HRESULT CBuild_CMake_Plugin::Run() {
 		auto specificDir = build_dir / Compiled_Directory / Build_Type_String;
 
 		if (!filesystem::exists(specificDir) || !filesystem::is_directory(specificDir)) {
-			mReporter.Report(ziran::NJob_Report_Type::Error, "Could not find output executable in any of standard output paths. Make sure you don't modify the output path in your CMakeLists.txt", "build");
+			mReporter.Report(ziran::NJob_Report_Type::Error, "Výstupní spustitelný soubor nebyl nalezen. Ujistěte se, že v CMakeLists.txt nijak neovlivňujete cestu k výstupním souborům.", "build");
 			return E_FAIL;
 		}
 
@@ -204,7 +219,7 @@ HRESULT CBuild_CMake_Plugin::Run() {
 	}
 
 	mEnv.Set_State_String("output_executable_path", finalExePath.string().c_str());
-	mReporter.Report(ziran::NJob_Report_Type::Info, ("Successfully built executable " + finalExeName).c_str(), "build");
+	mReporter.Report(ziran::NJob_Report_Type::Info, ("Sestavení cíle " + finalExeName + " proběhlo úspěšně").c_str(), "build");
 
 	return S_OK;
 }

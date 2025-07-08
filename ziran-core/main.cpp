@@ -49,14 +49,6 @@ filesystem::path Transfer_Job(const filesystem::path& source, const filesystem::
 	return target;
 }
 
-int Initialize_Network()
-{
-#ifdef _WIN32
-
-#endif
-	return 0;
-}
-
 int main(int argc, char** argv)
 {
 	std::cout	<< "Ziran - semestral work validator" << std::endl
@@ -165,6 +157,20 @@ int main(int argc, char** argv)
 	if (!filesystem::exists(cfg.discardDir))
 		filesystem::create_directories(cfg.discardDir);
 
+	// if the work directory is not empty, it means the daemon crashed and there are jobs left to process; move them back to input directory
+	for (auto& entry : filesystem::directory_iterator(cfg.workDir)) {
+		if (entry.is_directory() && filesystem::exists(entry.path() / "job-meta"))
+		{
+			std::cout << "Restoring " << entry.path().filename() << " to input directory..." << std::endl;
+			Transfer_Job(entry.path(), cfg.inDir);
+		}
+		else
+		{
+			std::cout << "Discarding " << entry.path().filename() << " (invalid job entry)..." << std::endl;
+			Transfer_Job(entry.path(), cfg.discardDir);
+		}
+	}
+
 	while (true)
 	{
 		// at first, go through the input directory to scan for job left from the time the daemon was down
@@ -207,6 +213,7 @@ int main(int argc, char** argv)
 					Transfer_Job(work_dest, cfg.outDir);
 					db.Set_Job_Status(rec.id, NJob_Status::Done);
 					db.Set_Job_Output(rec.id, output);
+					db.Set_Job_Processed_Timestamp(rec.id, std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
 					std::cout << "Finished " << entry.path().filename() << "!" << std::endl;
 				}

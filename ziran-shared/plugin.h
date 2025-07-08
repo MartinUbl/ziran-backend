@@ -24,7 +24,7 @@ namespace ziran
 			virtual ~IReporter() = default;
 
 			// reports a message to a given job; may specify identifier to further distinguish the outputs
-			virtual HRESULT Report(NJob_Report_Type type, const char* str, const char* identifier = nullptr) = 0;
+			virtual HRESULT Report(NJob_Report_Type type, const char* str, const char* identifier = nullptr, const char* extendedValue = nullptr) = 0;
 	};
 
 	/*

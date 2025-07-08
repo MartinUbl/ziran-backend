@@ -78,6 +78,7 @@ class CDatabase_Handler
 		MYSQL_STMT* mStmt_Set_Job_Status = nullptr;
 		MYSQL_STMT* mStmt_Set_Job_Output = nullptr;
 		MYSQL_STMT* mStmt_Add_Job_Report = nullptr;
+		MYSQL_STMT* mStmt_Set_Job_Processed_On = nullptr;
 
 		// loaded plugin map (database plugins)
 		std::map<int, GUID> mDatabase_Plugins;
@@ -123,11 +124,14 @@ class CDatabase_Handler
 		// sets job status
 		bool Set_Job_Status(TJob_Id job_id, NJob_Status status);
 
+		// set job processed on timestamp
+		bool Set_Job_Processed_Timestamp(TJob_Id job_id, time_t timestamp);
+
 		// sets job output status
 		bool Set_Job_Output(TJob_Id job_id, NJob_Output status);
 
 		// adds one report line to job report table
-		bool Add_Job_Report(TJob_Id job_id, ziran::NJob_Report_Type type, const std::string& value, std::optional<std::string> identifier = std::nullopt);
+		bool Add_Job_Report(TJob_Id job_id, ziran::NJob_Report_Type type, const std::string& value, std::optional<std::string> identifier = std::nullopt, std::optional<std::string> extendedHTMLValue = std::nullopt);
 
 		// retrieves all pipeline items
 		const std::vector<TPipeline_Item_Record>& Get_Pipeline_Items(TJob_Id job_id) const;

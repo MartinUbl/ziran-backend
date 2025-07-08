@@ -3,6 +3,10 @@
 #include <algorithm>
 #include <array>
 #include <fstream>
+#include <string>
+#include <vector>
+#include <sstream>
+#include <unordered_map>
 
 namespace ziran
 {
@@ -65,6 +69,161 @@ namespace ziran
 			}
 
 			return out;
+		}
+
+		std::string replace_all(const std::string& str, const std::string& from, const std::string& to) {
+			std::string result = str;
+			size_t start_pos = 0;
+			while ((start_pos = result.find(from, start_pos)) != std::string::npos) {
+				result.replace(start_pos, from.length(), to);
+				start_pos += to.length();
+			}
+			return result;
+		}
+
+		// HTML escaping function
+		static std::string escapeHTML(const std::string& input) {
+			std::string output;
+			for (char c : input) {
+				switch (c) {
+				case '&':  output += "&amp;";  break;
+				case '<':  output += "&lt;";   break;
+				case '>':  output += "&gt;";   break;
+				case '"':  output += "&quot;"; break;
+				case '\'': output += "&#39;";  break;
+				default:   output += c;        break;
+				}
+			}
+			return output;
+		}
+
+		std::vector<std::string> splitWords(const std::string& text) {
+			std::istringstream iss(text);
+			std::vector<std::string> words;
+			std::string word;
+			while (iss >> word) {
+				words.push_back(word);
+			}
+			return words;
+		}
+
+		// Reconstruct from words with optional trailing space
+		std::string joinWords(const std::vector<std::string>& words) {
+			std::string result;
+			for (const auto& word : words) {
+				result += escapeHTML(word) + " ";
+			}
+			return result;
+		}
+
+		// Compute LCS table
+		static std::vector<std::vector<int>> computeLCS(const std::string& a, const std::string& b) {
+			size_t n = a.size(), m = b.size();
+			std::vector<std::vector<int>> lcs(n + 1, std::vector<int>(m + 1, 0));
+			for (size_t i = 0; i < n; ++i) {
+				for (size_t j = 0; j < m; ++j) {
+					if (a[i] == b[j])
+						lcs[i + 1][j + 1] = lcs[i][j] + 1;
+					else
+						lcs[i + 1][j + 1] = std::max(lcs[i + 1][j], lcs[i][j + 1]);
+				}
+			}
+			return lcs;
+		}
+
+		std::vector<std::vector<int>> computeWordLCS(const std::vector<std::string>& a, const std::vector<std::string>& b) {
+			size_t n = a.size(), m = b.size();
+			std::vector<std::vector<int>> lcs(n + 1, std::vector<int>(m + 1, 0));
+			for (size_t i = 0; i < n; ++i) {
+				for (size_t j = 0; j < m; ++j) {
+					if (a[i] == b[j])
+						lcs[i + 1][j + 1] = lcs[i][j] + 1;
+					else
+						lcs[i + 1][j + 1] = std::max(lcs[i + 1][j], lcs[i][j + 1]);
+				}
+			}
+			return lcs;
+		}
+
+		// Backtrack and generate diff with HTML tags and escaping
+		std::string stringDiffHTML(const std::string& a, const std::string& b) {
+			auto lcs = computeLCS(a, b);
+			std::string result;
+
+			size_t i = a.size();
+			size_t j = b.size();
+
+			std::string ins, del;
+
+			while (i > 0 || j > 0) {
+				if (i > 0 && j > 0 && a[i - 1] == b[j - 1]) {
+					if (!ins.empty()) {
+						result = "<ins>" + escapeHTML(ins) + "</ins>" + result;
+						ins.clear();
+					}
+					if (!del.empty()) {
+						result = "<del>" + escapeHTML(del) + "</del>" + result;
+						del.clear();
+					}
+					result = escapeHTML(std::string(1, a[i - 1])) + result;
+					--i;
+					--j;
+				}
+				else if (j > 0 && (i == 0 || lcs[i][j - 1] >= lcs[i - 1][j])) {
+					ins = b[j - 1] + ins;
+					--j;
+				}
+				else if (i > 0 && (j == 0 || lcs[i][j - 1] < lcs[i - 1][j])) {
+					del = a[i - 1] + del;
+					--i;
+				}
+			}
+
+			if (!ins.empty()) result = "<ins>" + escapeHTML(ins) + "</ins>" + result;
+			if (!del.empty()) result = "<del>" + escapeHTML(del) + "</del>" + result;
+
+			return result;
+		}
+
+		std::string stringWordDiffHTML(const std::string& a_str, const std::string& b_str) {
+			auto a = splitWords(a_str);
+			auto b = splitWords(b_str);
+			auto lcs = computeWordLCS(a, b);
+
+			size_t i = a.size();
+			size_t j = b.size();
+			std::vector<std::string> ins, del;
+			std::string result;
+
+			// Backtrack from LCS table
+			while (i > 0 || j > 0) {
+				if (i > 0 && j > 0 && a[i - 1] == b[j - 1]) {
+					if (!ins.empty()) {
+						result = "<ins>" + joinWords(ins) + "</ins>" + result;
+						ins.clear();
+					}
+					if (!del.empty()) {
+						result = "<del>" + joinWords(del) + "</del>" + result;
+						del.clear();
+					}
+					result = escapeHTML(a[i - 1]) + " " + result;
+					--i; --j;
+				}
+				else if (j > 0 && (i == 0 || lcs[i][j - 1] >= lcs[i - 1][j])) {
+					ins.insert(ins.begin(), b[j - 1]);
+					--j;
+				}
+				else if (i > 0 && (j == 0 || lcs[i][j - 1] < lcs[i - 1][j])) {
+					del.insert(del.begin(), a[i - 1]);
+					--i;
+				}
+			}
+
+			// Flush remaining insertions or deletions
+			if (!ins.empty()) result = "<ins>" + joinWords(ins) + "</ins>" + result;
+			if (!del.empty()) result = "<del>" + joinWords(del) + "</del>" + result;
+
+			return result;
 		}
 	}
 

@@ -71,12 +71,17 @@ class CReporter : public ziran::IReporter
 			//
 		}
 
-		virtual HRESULT Report(ziran::NJob_Report_Type type, const char* str, const char* identifier = nullptr) override
+		virtual HRESULT Report(ziran::NJob_Report_Type type, const char* str, const char* identifier = nullptr, const char* extendedValue = nullptr) override
 		{
 			if (!str)
 				return E_FAIL;
 
-			return mDb.Add_Job_Report(mJob_Id, type, str, identifier ? std::optional<std::string>(identifier) : std::nullopt) ? S_OK : E_FAIL;
+			return mDb.Add_Job_Report(mJob_Id,
+				type,
+				str,
+				identifier ? std::optional<std::string>(identifier) : std::nullopt,
+				extendedValue ? std::optional<std::string>(extendedValue) : std::nullopt
+			) ? S_OK : E_FAIL;
 		}
 };
 
