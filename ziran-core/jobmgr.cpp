@@ -59,7 +59,7 @@ void CJob_Mgr::Stop()
 void CJob_Mgr::Thread_Fnc()
 {
 	sockaddr_in addr;
-	int addrLen = sizeof(addr);
+	SOCKLEN addrLen = sizeof(addr);
 
 	std::array<char, 128> buffer;
 

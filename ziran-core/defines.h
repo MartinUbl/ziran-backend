@@ -8,6 +8,7 @@
 #include <WinSock2.h>
 
 using SOCK = SOCKET;
+using SOCKLEN = int;
 
 inline int Get_Last_Socket_Error() {
     return WSAGetLastError();
@@ -37,8 +38,10 @@ inline int Network_Deinit() {
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <ctime>
 
 using SOCK = int;
+using SOCKLEN = socklen_t;
 
 inline int closesocket(SOCK skt) {
     return close(skt);
@@ -61,7 +64,7 @@ inline int ioctlsocket(SOCK fd, unsigned long request, u_long* val) {
     return ioctl(fd, request, val);
 }
 
-inline struct std::tm* localtime_s(struct std::tm* result, const std::time_t* tm) {
+inline struct tm* localtime_s(struct tm* result, const time_t* tm) {
     return localtime_r(tm, result);
 }
 
