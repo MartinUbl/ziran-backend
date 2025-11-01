@@ -38,7 +38,6 @@ inline int Network_Deinit() {
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
 #include <errno.h>
-#include <ctime>
 
 using SOCK = int;
 using SOCKLEN = socklen_t;
@@ -62,10 +61,6 @@ inline int Network_Deinit() {
 
 inline int ioctlsocket(SOCK fd, unsigned long request, u_long* val) {
     return ioctl(fd, request, val);
-}
-
-inline struct tm* localtime_s(struct tm* result, const time_t* tm) {
-    return localtime_r(tm, result);
 }
 
 #endif
