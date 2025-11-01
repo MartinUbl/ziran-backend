@@ -36,10 +36,10 @@ ENDFOREACH(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
 FILE(GLOB_RECURSE core_src ziran-core/*.cpp ziran-core/*.h ziran-core/*.hpp ziran-core/*.c)
 FILE(GLOB_RECURSE shared_src ziran-shared/*.cpp ziran-shared/*.h ziran-shared/*.hpp ziran-shared/*.c)
 
-MESSAGE("Configuring core executable")
+MESSAGE(STATUS "Configuring core executable")
 ADD_EXECUTABLE(ziran-core ${core_src})
 
-MESSAGE("Configuring shared code library")
+MESSAGE(STATUS "Configuring shared code library")
 ADD_LIBRARY(ziran-shared STATIC ${shared_src})
 SET_PROPERTY(TARGET ziran-shared PROPERTY POSITION_INDEPENDENT_CODE ON)
 

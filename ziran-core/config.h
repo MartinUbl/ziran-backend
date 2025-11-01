@@ -19,4 +19,6 @@ struct TConfig
 	std::string dbUser = "root";
 	std::string dbPassword = "";
 	std::string dbName = "ziran";
+
+	std::string watchdogFile = "ziran.wd";
 };

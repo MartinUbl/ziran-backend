@@ -1,4 +1,5 @@
 #include "jobmgr.h"
+#include "watchdog.h"
 
 #include <array>
 
@@ -60,14 +61,29 @@ void CJob_Mgr::Thread_Fnc()
 {
 	sockaddr_in addr;
 	SOCKLEN addrLen = sizeof(addr);
+	struct pollfd pfd;
 
 	std::array<char, 128> buffer;
 
 	const std::string WakeUpStr{ "WAKEUP" };
 	const std::string ReloadStr{ "RELOAD" };
 
+	pfd.fd = mSocket;
+	pfd.events = POLLIN;
+
 	while (mRunning)
 	{
+		CWatchdog::Get_Instance().Kick(NWatchdog_Source::Job_Manager);
+
+#ifdef WIN32
+		int pollResult = WSAPoll(&pfd, 1, 1000);
+#else
+		int pollResult = poll(&pfd, 1, 1000);
+#endif
+
+		if (pollResult <= 0)
+			continue;
+
 		std::fill(buffer.begin(), buffer.end(), '\0');
 
 		int result = recvfrom(mSocket, buffer.data(), static_cast<int>(buffer.size()), 0, reinterpret_cast<sockaddr*>(&addr), &addrLen);
@@ -96,12 +112,16 @@ void CJob_Mgr::Thread_Fnc()
 	}
 }
 
-NWakeUp_Reason CJob_Mgr::Await()
+NWakeUp_Reason CJob_Mgr::Await(std::chrono::milliseconds timeout)
 {
 	std::unique_lock<std::mutex> lck(mMtx);
 
-	while (!mSignalized && mRunning)
-		mCv.wait(lck);
+	while (!mSignalized && mRunning) {
+		auto cv_res = mCv.wait_for(lck, timeout);
+		if (cv_res == std::cv_status::timeout && !mSignalized) {
+			return NWakeUp_Reason::Timeout;
+		}
+	}
 
 	bool isSuccess = mRunning && mSignalized;
 

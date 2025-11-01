@@ -6,6 +6,8 @@
 #include "database.h"
 #include "controller.h"
 #include "jobmgr.h"
+#include "worker.h"
+#include "watchdog.h"
 #include "SimpleIni.h"
 #include <functional>
 
@@ -33,22 +35,6 @@ auto Startup_Routine(const std::string& what, TFunc func, FncArgs... args)
 	return res;
 }
 
-// transfer job from one directory to another, resolves name conflicts if needed
-filesystem::path Transfer_Job(const filesystem::path& source, const filesystem::path& destDir)
-{
-	auto basename = source.filename().string();
-
-	filesystem::path target = destDir / basename;
-
-	int ext = 0;
-	while (filesystem::exists(target))
-		target = destDir / (basename + "_" + std::to_string(++ext));
-
-	filesystem::rename(source, target);
-
-	return target;
-}
-
 int main(int argc, char** argv)
 {
 	std::cout	<< "Ziran - semestral work validator" << std::endl
@@ -70,6 +56,7 @@ int main(int argc, char** argv)
 			cfg.outDir = conf.GetValue("core", "output_dir", cfg.outDir.string().c_str());
 			cfg.workDir = conf.GetValue("core", "work_dir", cfg.workDir.string().c_str());
 			cfg.discardDir = conf.GetValue("core", "discard_dir", cfg.discardDir.string().c_str());
+			cfg.watchdogFile = conf.GetValue("core", "watchdog_file", cfg.watchdogFile.c_str());
 
 			cfg.bindIpString = conf.GetValue("listener", "bind_ip", cfg.bindIpString.c_str());
 			long bindport = conf.GetLongValue("listener", "port", cfg.bindPort);
@@ -171,8 +158,18 @@ int main(int argc, char** argv)
 		}
 	}
 
+	std::cout << "Starting worker pool..." << std::endl;
+
+	CWorker_Pool workerPool(mgr, db, cfg.outDir, 1);// std::thread::hardware_concurrency());
+
+	// start watchdog
+	std::cout << "Starting watchdog..." << std::endl;
+	CWatchdog::Get_Instance().Start((Get_Application_Dir() / cfg.watchdogFile).string());
+
 	while (true)
 	{
+		CWatchdog::Get_Instance().Kick(NWatchdog_Source::Periodic_Check);
+
 		// at first, go through the input directory to scan for job left from the time the daemon was down
 		// then, await another input
 
@@ -199,23 +196,12 @@ int main(int argc, char** argv)
 				}
 				else
 				{
+					std::cout << "Submitting " << entry.path().filename() << " to processing..." << std::endl;
+
 					// transfer job to work directory and change status
 					const filesystem::path work_dest = Transfer_Job(entry.path(), cfg.workDir);
-					db.Set_Job_Status(rec.id, NJob_Status::Work);
 
-					// create pipeline controller
-					CPipeline_Ctl ctl(db, mgr, rec);
-
-					// and perform all tasks
-					auto output = ctl.Run(work_dest, env);
-
-					// then, transfer job to output directory, set status to 'done' and mark output status
-					Transfer_Job(work_dest, cfg.outDir);
-					db.Set_Job_Status(rec.id, NJob_Status::Done);
-					db.Set_Job_Output(rec.id, output);
-					db.Set_Job_Processed_Timestamp(rec.id, std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-
-					std::cout << "Finished " << entry.path().filename() << "!" << std::endl;
+					workerPool.Run_Job(rec, work_dest, env);
 				}
 			}
 			else
@@ -226,7 +212,12 @@ int main(int argc, char** argv)
 		}
 
 		// await an input
-		auto reason = jobMgr.Await();
+		auto reason = jobMgr.Await(std::chrono::milliseconds(2500));
+
+		if (reason == NWakeUp_Reason::Timeout) {
+			// timeout, just continue
+			continue;
+		}
 
 		// if the wakeup reason is "none", it means the jobMgr encountered an error or was instructed to terminate
 		if (reason == NWakeUp_Reason::None) {
@@ -240,6 +231,8 @@ int main(int argc, char** argv)
 			continue;
 		}
 	}
+
+	CWatchdog::Get_Instance().Stop();
 
 	jobMgr.Stop();
 

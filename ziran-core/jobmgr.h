@@ -15,6 +15,7 @@ enum class NWakeUp_Reason
 
 	Job,
 	Reload,
+	Timeout,
 };
 
 class CJob_Mgr
@@ -43,5 +44,5 @@ class CJob_Mgr
 		bool Start(std::vector<std::string>& log);
 		void Stop();
 
-		NWakeUp_Reason Await();
+		NWakeUp_Reason Await(std::chrono::milliseconds timeout);
 };
