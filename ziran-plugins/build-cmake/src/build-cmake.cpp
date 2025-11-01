@@ -4,7 +4,7 @@
 #include <queue>
 #include <fstream>
 #include <sstream>
-
+#include <algorithm>
 #include <cstdlib>
 
 namespace

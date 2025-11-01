@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.12)
 
 PROJECT(ziran)
 
@@ -7,9 +7,15 @@ ADD_COMPILE_OPTIONS("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 ADD_COMPILE_OPTIONS("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
 SET(MYSQL_INCLUDE_DIR "" CACHE STRING "MySQL include path")
-SET(MYSQL_LIBRARY_STATIC "" CACHE STRING "MySQL library (libmysql.lib or simular) path")
+IF (WIN32)
+    SET(MYSQL_LIBRARY_STATIC "" CACHE STRING "MySQL library (libmysql.lib or similar) path")
+ELSE()
+    SET(MYSQL_LIBRARY_STATIC "mysqlclient")
+ENDIF()
 
 INCLUDE_DIRECTORIES(${MYSQL_INCLUDE_DIR})
+
+FIND_PACKAGE(Threads REQUIRED)
 
 SET(output_dir "${CMAKE_BINARY_DIR}/compiled")
 
@@ -35,11 +41,12 @@ ADD_EXECUTABLE(ziran-core ${core_src})
 
 MESSAGE("Configuring shared code library")
 ADD_LIBRARY(ziran-shared STATIC ${shared_src})
+SET_PROPERTY(TARGET ziran-shared PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 IF(WIN32)
 	TARGET_LINK_LIBRARIES(ziran-core Ws2_32)
 ENDIF()
 
-TARGET_LINK_LIBRARIES(ziran-core ${MYSQL_LIBRARY_STATIC} ziran-shared)
+TARGET_LINK_LIBRARIES(ziran-core ${MYSQL_LIBRARY_STATIC} ${CMAKE_DL_LIBS} Threads::Threads ziran-shared)
 
 ADD_SUBDIRECTORY(ziran-plugins)
