@@ -5,11 +5,10 @@
 
 #include <cstdint>
 
-namespace ziran
-{
+namespace ziran {
+
 	// job report type used in database and in IReporter iface
-	enum class NJob_Report_Type : uint32_t
-	{
+	enum class NJob_Report_Type : uint32_t {
 		Info,		// db value 'info'
 		Warning,	// db value 'warning'
 		Error,		// db value 'error'
@@ -18,8 +17,7 @@ namespace ziran
 	/*
 	 * Interface for job message reporting
 	 */
-	class IReporter
-	{
+	class IReporter {
 		public:
 			virtual ~IReporter() = default;
 
@@ -30,8 +28,7 @@ namespace ziran
 	/*
 	 * Environment interface
 	 */
-	class IEnvironment
-	{
+	class IEnvironment {
 		public:
 			virtual ~IEnvironment() = default;
 
@@ -47,8 +44,7 @@ namespace ziran
 	};
 
 	// descriptor of Ziran plugin
-	struct TPlugin_Descriptor
-	{
+	struct TPlugin_Descriptor {
 		GUID id;
 		const char* name;
 	};
@@ -58,6 +54,4 @@ namespace ziran
 
 	// usual signature: extern "C" HRESULT do_run_plugin(const GUID* id, const char* base_directory, const char** parameter_names, const char** parameter_values, const size_t parameters_count, ziran::IReporter* reporter)
 	using TDo_Run_Plugin = HRESULT(*)(const GUID*, const char*, const char**, const char**, const size_t, IReporter*, IEnvironment*);
-
-
 }

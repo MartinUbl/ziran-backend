@@ -4,8 +4,7 @@
 #include "../../../ziran-shared/plugin.h"
 #include "../../../ziran-shared/plugin_utils.h"
 
-class CBuild_CMake_Plugin
-{
+class CBuild_CMake_Plugin {
 	private:
 		const filesystem::path mBase_Path;
 		ziran::IReporter& mReporter;

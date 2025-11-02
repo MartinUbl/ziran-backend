@@ -4,8 +4,7 @@
 #include <cstdint>
 #include "../ziran-shared/FilesystemLib.h"
 
-struct TConfig
-{
+struct TConfig {
 	filesystem::path inDir = "input";
 	filesystem::path outDir = "output";
 	filesystem::path workDir = "work";

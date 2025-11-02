@@ -9,8 +9,7 @@
 /*
  * Dynamic library (shared object) wrapper class
  */
-class CDynamic_Library final
-{
+class CDynamic_Library final {
 	private:
 		// stored module handle (nullptr if invalid)
 		HMODULE mHandle;

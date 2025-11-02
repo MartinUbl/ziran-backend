@@ -47,4 +47,4 @@ const char* Describe_Error(const HRESULT error);
 #ifdef __cplusplus
 	extern "C"
 #endif
-	bool Succeeded(const HRESULT rc);
+bool Succeeded(const HRESULT rc);

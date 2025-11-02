@@ -9,8 +9,7 @@
 #include <condition_variable>
 #include <vector>
 
-enum class NWakeUp_Reason
-{
+enum class NWakeUp_Reason {
 	None,
 
 	Job,
@@ -18,8 +17,7 @@ enum class NWakeUp_Reason
 	Timeout,
 };
 
-class CJob_Mgr
-{
+class CJob_Mgr {
 	private:
 		const TConfig& mConfig;
 
@@ -32,8 +30,8 @@ class CJob_Mgr
 		bool mShould_Reload = false;
 
 	private:
-		SOCK mSocket;
-		sockaddr_in mMyAddr;
+		SOCK mSocket = Invalid_Socket;
+		sockaddr_in mMyAddr = {};
 
 	protected:
 		void Thread_Fnc();
@@ -41,7 +39,7 @@ class CJob_Mgr
 	public:
 		CJob_Mgr(const TConfig& cfg);
 
-		bool Start(std::vector<std::string>& log);
+		bool Start();
 		void Stop();
 
 		NWakeUp_Reason Await(std::chrono::milliseconds timeout);

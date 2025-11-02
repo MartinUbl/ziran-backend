@@ -28,8 +28,7 @@
 #endif
 
 
-filesystem::path Get_Application_Dir()
-{
+filesystem::path Get_Application_Dir() {
 #ifdef _WIN32
 	wchar_t ModuleFileName[Max_File_Path];
 	GetModuleFileNameW(NULL, ModuleFileName, Max_File_Path);

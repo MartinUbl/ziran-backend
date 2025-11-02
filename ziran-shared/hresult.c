@@ -1,9 +1,7 @@
 #include "hresult.h"
 
-const char* Describe_Error(const HRESULT error)
-{
-	switch (error)
-	{
+const char* Describe_Error(const HRESULT error) {
+	switch (error) {
 		case S_OK: return "No error"; break;
 		case S_FALSE: return "Succeeded, but no result"; break;
 		case ERROR_FILE_NOT_FOUND: return "File not found"; break;
@@ -25,7 +23,6 @@ const char* Describe_Error(const HRESULT error)
 	}
 }
 
-bool Succeeded(const HRESULT rc)
-{
+bool Succeeded(const HRESULT rc) {
 	return (rc == S_OK) || (rc == S_FALSE);
 }

@@ -44,7 +44,7 @@ HRESULT CClang_Tidy_Plugin::Run() {
 		auto currentPath = traversalQueue.front();
 		traversalQueue.pop();
 		for (const auto& entry : filesystem::directory_iterator(currentPath)) {
-			if (entry.is_directory()) {
+			if (entry.is_directory() && entry.path().filename().string() != "build") {
 				traversalQueue.push(entry.path());
 			}
 			else if (entry.is_regular_file()) {

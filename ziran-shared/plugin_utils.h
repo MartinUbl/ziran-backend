@@ -4,8 +4,7 @@
 #include <map>
 #include <vector>
 
-namespace ziran
-{
+namespace ziran {
 	using ParamMap = std::map<std::string, std::string>;
 
 	// converts two arrays of key-value components to a single map
@@ -13,8 +12,7 @@ namespace ziran
 
 	bool Param_Get(const ParamMap& map, const std::string& key, std::string& target);
 
-	namespace string
-	{
+	namespace string {
 		// trims leading and trailing spaces from a string
 		std::string trim(const std::string& s);
 
@@ -35,8 +33,7 @@ namespace ziran
 		std::string stringWordDiffHTML(const std::string& a, const std::string& b);
 	}
 
-	namespace proc
-	{
+	namespace proc {
 		struct CommandResult {
 			std::string output;
 			int exitstatus;

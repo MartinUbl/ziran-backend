@@ -16,24 +16,21 @@ using TJob_Id = int;
 constexpr TJob_Id Invalid_Job_Id = static_cast<TJob_Id>(-1);
 
 // available job status
-enum class NJob_Status
-{
+enum class NJob_Status {
 	Wait,		// db value 'wait'
 	Work,		// db value 'work'
 	Done,		// db value 'done'
 };
 
 // available job output
-enum class NJob_Output
-{
+enum class NJob_Output {
 	None,		// db value 'none'
 	Accept,		// db value 'accept'
 	Reject,		// db value 'reject'
 };
 
 // record of single job; matches the 'job' table layout
-struct TJob_Record
-{
+struct TJob_Record {
 	TJob_Id id;
 	std::string name;
 	NJob_Status status;
@@ -42,8 +39,7 @@ struct TJob_Record
 };
 
 // job report record structure; matches the 'job_report' table layout
-struct TJob_Report_Record
-{
+struct TJob_Report_Record {
 	int id;
 	TJob_Id job_id;
 	ziran::NJob_Report_Type log_type;
@@ -52,8 +48,7 @@ struct TJob_Report_Record
 };
 
 // pipeline item record structure; matches the 'pipeline_item' table layout, except parameters field, which is parsed
-struct TPipeline_Item_Record
-{
+struct TPipeline_Item_Record {
 	int id;
 	int pipeline_id;
 	int plugin_id;
@@ -66,8 +61,7 @@ class CDefault_Environment;
 /*
  * Database handler to access DB backend
  */
-class CDatabase_Handler
-{
+class CDatabase_Handler {
 	private:
 		// MySQL connection handle
 		MYSQL* mConnection = nullptr;
@@ -91,27 +85,27 @@ class CDatabase_Handler
 
 	protected:
 		// parses the pseudo-JSON string of parameters to a map
-		static std::map<std::string, std::string> Parse_Parameters(const std::string& str, std::vector<std::string>& log);
+		static std::map<std::string, std::string> Parse_Parameters(const std::string& str);
 
 	public:
 		CDatabase_Handler();
 		virtual ~CDatabase_Handler();
 
 		// connects to a MySQL database using given credentials and specifiers
-		bool Connect(const std::string& host, uint16_t port, const std::string& username, const std::string& password, const std::string& dbname, std::vector<std::string>& log);
+		bool Connect(const std::string& host, uint16_t port, const std::string& username, const std::string& password, const std::string& dbname);
 
 		// intializes prepared statements
-		bool Init_Statements(std::vector<std::string>& log);
+		bool Init_Statements();
 		// loads plugin records from database
-		bool Load_DB_Plugins(std::vector<std::string>& log);
+		bool Load_DB_Plugins();
 		// loads global configuration records from database
-		bool Load_DB_Global_Config(std::vector<std::string>& log, CDefault_Environment& env);
+		bool Load_DB_Global_Config(CDefault_Environment& env);
 		// loads global configuration records from database
-		bool Load_DB_Inputs(std::vector<std::string>& log, CDefault_Environment& env);
+		bool Load_DB_Inputs(CDefault_Environment& env);
 		// loads pipeline records from database
-		bool Load_DB_Pipelines(std::vector<std::string>& log);
+		bool Load_DB_Pipelines();
 		// loads pipeline item records from database (ought to be called after Load_DB_Pipelines)
-		bool Load_DB_Pipeline_Items(std::vector<std::string>& log);
+		bool Load_DB_Pipeline_Items();
 
 		// closes database connection
 		bool Close();

@@ -8,19 +8,19 @@
 #include <sstream>
 #include <unordered_map>
 
-namespace ziran
-{
-	ParamMap Map_From_Param_Arrays(const char** keys, const char** values, const size_t sizes)
-	{
-		if (!keys || !values || sizes == 0)
+namespace ziran {
+
+	ParamMap Map_From_Param_Arrays(const char** keys, const char** values, const size_t sizes) {
+		if (!keys || !values || sizes == 0) {
 			return {};
+		}
 
 		std::map<std::string, std::string> p;
 
-		for (size_t i = 0; i < sizes; i++)
-		{
-			if (!keys[i])
+		for (size_t i = 0; i < sizes; i++) {
+			if (!keys[i]) {
 				continue;
+			}
 
 			p[keys[i]] = values[i] ? values[i] : "";
 		}
@@ -39,8 +39,7 @@ namespace ziran
 		return true;
 	}
 
-	namespace string
-	{
+	namespace string {
 		std::string trim(const std::string& s) {
 			auto wsfront = std::find_if_not(s.begin(), s.end(), [](int c) {return std::isspace(c); });
 			auto wsback = std::find_if_not(s.rbegin(), s.rend(), [](int c) {return std::isspace(c); }).base();
@@ -63,8 +62,9 @@ namespace ziran
 			std::string out = "";
 
 			for (size_t i = 0; i < vec.size(); i++) {
-				if (i != 0)
+				if (i != 0) {
 					out += delimiter;
+				}
 				out += vec[i];
 			}
 
@@ -122,10 +122,12 @@ namespace ziran
 			std::vector<std::vector<int>> lcs(n + 1, std::vector<int>(m + 1, 0));
 			for (size_t i = 0; i < n; ++i) {
 				for (size_t j = 0; j < m; ++j) {
-					if (a[i] == b[j])
+					if (a[i] == b[j]) {
 						lcs[i + 1][j + 1] = lcs[i][j] + 1;
-					else
+					}
+					else {
 						lcs[i + 1][j + 1] = std::max(lcs[i + 1][j], lcs[i][j + 1]);
+					}
 				}
 			}
 			return lcs;
@@ -136,10 +138,12 @@ namespace ziran
 			std::vector<std::vector<int>> lcs(n + 1, std::vector<int>(m + 1, 0));
 			for (size_t i = 0; i < n; ++i) {
 				for (size_t j = 0; j < m; ++j) {
-					if (a[i] == b[j])
+					if (a[i] == b[j]) {
 						lcs[i + 1][j + 1] = lcs[i][j] + 1;
-					else
+					}
+					else {
 						lcs[i + 1][j + 1] = std::max(lcs[i + 1][j], lcs[i][j + 1]);
+					}
 				}
 			}
 			return lcs;
@@ -179,8 +183,12 @@ namespace ziran
 				}
 			}
 
-			if (!ins.empty()) result = "<ins>" + escapeHTML(ins) + "</ins>" + result;
-			if (!del.empty()) result = "<del>" + escapeHTML(del) + "</del>" + result;
+			if (!ins.empty()) {
+				result = "<ins>" + escapeHTML(ins) + "</ins>" + result;
+			}
+			if (!del.empty()) {
+				result = "<del>" + escapeHTML(del) + "</del>" + result;
+			}
 
 			return result;
 		}
@@ -220,15 +228,19 @@ namespace ziran
 			}
 
 			// Flush remaining insertions or deletions
-			if (!ins.empty()) result = "<ins>" + joinWords(ins) + "</ins>" + result;
-			if (!del.empty()) result = "<del>" + joinWords(del) + "</del>" + result;
+			if (!ins.empty()) {
+				result = "<ins>" + joinWords(ins) + "</ins>" + result;
+			}
+			if (!del.empty()) {
+				result = "<del>" + joinWords(del) + "</del>" + result;
+			}
 
 			return result;
 		}
 	}
 
-	namespace proc
-	{
+	namespace proc {
+
 		CommandResult execute(const std::string& command, bool redirectStderrToStdout, const std::string& inputStreamContents) {
 			int exitcode = InvalidExitStatus;
 			std::array<char, 128> buffer{};
@@ -265,6 +277,7 @@ namespace ziran
 				pclose(pipe);
 				throw;
 			}
+
 			exitcode = WEXITSTATUS(pclose(pipe));
 			return CommandResult{ result, exitcode };
 		}

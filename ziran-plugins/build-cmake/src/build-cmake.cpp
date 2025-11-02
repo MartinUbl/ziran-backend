@@ -7,8 +7,7 @@
 #include <algorithm>
 #include <cstdlib>
 
-namespace
-{
+namespace {
 	const std::string Compiled_Directory = "compiled";
 	const std::string Build_Type_String = "Release";
 }
@@ -26,8 +25,9 @@ CBuild_CMake_Plugin::CBuild_CMake_Plugin(const filesystem::path& base_path, cons
 std::string CBuild_CMake_Plugin::Extract_Executable_Name(const filesystem::path& cmakelists) {
 
 	std::ifstream ifs(cmakelists);
-	if (!ifs.is_open())
+	if (!ifs.is_open()) {
 		return "";
+	}
 
 	const std::string searchedStr = "add_executable(";
 
@@ -46,14 +46,15 @@ std::string CBuild_CMake_Plugin::Extract_Executable_Name(const filesystem::path&
 			input += lcase.substr(pos);
 
 			int parity = 0;
-			do
-			{
+			do {
 				parity = 0;
 				for (size_t i = 0; i < input.size(); i++) {
-					if (input[i] == '(')
+					if (input[i] == '(') {
 						parity++;
-					else if (input[i] == ')')
+					}
+					else if (input[i] == ')') {
 						parity--;
+					}
 				}
 
 				if (parity == 0) {
@@ -68,18 +69,18 @@ std::string CBuild_CMake_Plugin::Extract_Executable_Name(const filesystem::path&
 				input += line;
 
 			} while (parity > 0);
-
-			//
 		}
 	}
 
-	if (!found)
+	if (!found) {
 		return "";
+	}
 
 	input = ziran::string::trim(input.substr(searchedStr.size()));
 	auto pos = input.find_first_of(' ');
-	if (pos == std::string::npos)
+	if (pos == std::string::npos) {
 		return "";
+	}
 
 	return input.substr(0, pos);
 }
@@ -95,6 +96,8 @@ HRESULT CBuild_CMake_Plugin::Run() {
 	std::vector<std::string> exeName;
 
 	bool match = false;
+
+	// traversal scope
 	{
 		std::queue<filesystem::path> traversal;
 
@@ -197,8 +200,7 @@ HRESULT CBuild_CMake_Plugin::Run() {
 		finalExeName = exeNameBase + ".exe";
 		finalExePath = filesystem::current_path() / finalExeName;
 	}
-	else
-	{
+	else {
 		auto specificDir = build_dir / Compiled_Directory / Build_Type_String;
 
 		if (!filesystem::exists(specificDir) || !filesystem::is_directory(specificDir)) {

@@ -7,10 +7,12 @@ CExec_Output_Match_Plugin::CExec_Output_Match_Plugin(const filesystem::path& bas
 
 	std::string str;
 	if (ziran::Param_Get(params, "match", str)) {
-		if (str == "exact")
+		if (str == "exact") {
 			mMode = NMatch_Mode::Exact;
-		else if (str == "regex")
+		}
+		else if (str == "regex") {
 			mMode = NMatch_Mode::Regex;
+		}
 	}
 
 	if (ziran::Param_Get(params, "string", str)) {
@@ -52,8 +54,8 @@ CExec_Output_Match_Plugin::CExec_Output_Match_Plugin(const filesystem::path& bas
 	}
 }
 
-HRESULT CExec_Output_Match_Plugin::Run()
-{
+HRESULT CExec_Output_Match_Plugin::Run() {
+
 	if (mMode == NMatch_Mode::None) {
 		mReporter.Report(ziran::NJob_Report_Type::Error, "No valid mode configured for execute output match plugin", "configuration");
 		return E_FAIL;
@@ -88,8 +90,7 @@ HRESULT CExec_Output_Match_Plugin::Run()
 
 	auto actualOutput = ziran::string::trim_whitespaces(res.output);
 
-	if (mMode == NMatch_Mode::Exact)
-	{
+	if (mMode == NMatch_Mode::Exact) {
 		if (actualOutput != mMatch_String) {
 
 			// handle both cases of newlines in output
@@ -109,8 +110,7 @@ HRESULT CExec_Output_Match_Plugin::Run()
 			return E_FAIL;
 		}
 	}
-	else if (mMode == NMatch_Mode::Regex)
-	{
+	else if (mMode == NMatch_Mode::Regex) {
 		std::regex r{ mMatch_String };
 		std::smatch match;
 

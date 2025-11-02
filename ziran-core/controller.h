@@ -4,8 +4,7 @@
 #include "plugins.h"
 #include "../ziran-shared/plugin.h"
 
-class CDefault_Environment : public ziran::IEnvironment
-{
+class CDefault_Environment : public ziran::IEnvironment {
 	private:
 		std::map<std::string, std::string> mConfig;
 		std::map<std::string, std::string> mInputs;
@@ -25,8 +24,7 @@ class CDefault_Environment : public ziran::IEnvironment
 /*
  * Pipeline controller - processes the pipeline on given job
  */
-class CPipeline_Ctl
-{
+class CPipeline_Ctl {
 	private:
 		// database reference
 		CDatabase_Handler& mDb;

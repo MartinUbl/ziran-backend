@@ -2,27 +2,28 @@
 #include "watchdog.h"
 
 #include <array>
+#include <string_view>
 
-CJob_Mgr::CJob_Mgr(const TConfig& cfg) : mConfig(cfg)
-{
+#include <spdlog/spdlog.h>
+
+CJob_Mgr::CJob_Mgr(const TConfig& cfg) : mConfig(cfg) {
 	//
 }
 
-bool CJob_Mgr::Start(std::vector<std::string>& log)
-{
+bool CJob_Mgr::Start() {
 	Network_Init();
 	mRunning = true;
 
 	mSocket = socket(AF_INET, SOCK_DGRAM, 0);
 	if (mSocket < 0) {
-		log.push_back("cannot create socket");
+		spdlog::error("Could not create socket: {}", Get_Last_Socket_Error());
 		return false;
 	}
 
 	mMyAddr.sin_family = AF_INET;
 	mMyAddr.sin_port = htons(mConfig.bindPort);
 	if (inet_pton(AF_INET, mConfig.bindIpString.c_str(), &mMyAddr.sin_addr.s_addr) != 1) {
-		log.push_back("could not resolve bind host " + mConfig.bindIpString);
+		spdlog::error("Could not resolve bind host {}", mConfig.bindIpString);
 		return false;
 	}
 
@@ -30,19 +31,17 @@ bool CJob_Mgr::Start(std::vector<std::string>& log)
 
 	result = bind(mSocket, reinterpret_cast<sockaddr*>(&mMyAddr), sizeof(mMyAddr));
 	if (result != 0) {
-		log.push_back("could not bind to given address: " + mConfig.bindIpString + ":" + std::to_string(mConfig.bindPort));
+		spdlog::error("Could not bind to address {}:{}. Error: {}", mConfig.bindIpString, mConfig.bindPort, Get_Last_Socket_Error());
 		return false;
 	}
-
-	listen(mSocket, 10);
 
 	mThread = std::make_unique<std::thread>(&CJob_Mgr::Thread_Fnc, this);
 
 	return true;
 }
 
-void CJob_Mgr::Stop()
-{
+void CJob_Mgr::Stop() {
+
 	// lock scope
 	{
 		std::unique_lock<std::mutex> lck(mMtx);
@@ -51,14 +50,15 @@ void CJob_Mgr::Stop()
 		closesocket(mSocket);
 	}
 
-	if (mThread && mThread->joinable())
+	if (mThread && mThread->joinable()) {
 		mThread->join();
+	}
 
 	Network_Deinit();
 }
 
-void CJob_Mgr::Thread_Fnc()
-{
+void CJob_Mgr::Thread_Fnc() {
+
 	sockaddr_in addr;
 	SOCKLEN addrLen = sizeof(addr);
 	struct pollfd pfd;
@@ -71,8 +71,7 @@ void CJob_Mgr::Thread_Fnc()
 	pfd.fd = mSocket;
 	pfd.events = POLLIN;
 
-	while (mRunning)
-	{
+	while (mRunning) {
 		CWatchdog::Get_Instance().Kick(NWatchdog_Source::Job_Manager);
 
 #ifdef WIN32
@@ -81,17 +80,19 @@ void CJob_Mgr::Thread_Fnc()
 		int pollResult = poll(&pfd, 1, 1000);
 #endif
 
-		if (pollResult <= 0)
+		// timeout
+		if (pollResult <= 0) {
 			continue;
+		}
 
 		std::fill(buffer.begin(), buffer.end(), '\0');
 
 		int result = recvfrom(mSocket, buffer.data(), static_cast<int>(buffer.size()), 0, reinterpret_cast<sockaddr*>(&addr), &addrLen);
-		if (result < buffer.size() - 1)
+		if (result < buffer.size() - 1) {
 			buffer[result] = '\0';
+		}
 
-		if (result == static_cast<int>(WakeUpStr.size()) && std::string{ buffer.data() } == WakeUpStr)
-		{
+		if (result == static_cast<int>(WakeUpStr.size()) && std::string_view{ buffer.data() } == WakeUpStr) {
 			std::unique_lock<std::mutex> lck(mMtx);
 
 			mSignalized = true;
@@ -99,8 +100,7 @@ void CJob_Mgr::Thread_Fnc()
 
 			sendto(mSocket, "OK", 2, 0, reinterpret_cast<sockaddr*>(&addr), addrLen);
 		}
-		else if (result == static_cast<int>(ReloadStr.size()) && std::string{ buffer.data() } == ReloadStr)
-		{
+		else if (result == static_cast<int>(ReloadStr.size()) && std::string_view{ buffer.data() } == ReloadStr) {
 			std::unique_lock<std::mutex> lck(mMtx);
 
 			mSignalized = true;
@@ -127,11 +127,13 @@ NWakeUp_Reason CJob_Mgr::Await(std::chrono::milliseconds timeout)
 
 	mSignalized = false;
 
-	if (!isSuccess)
+	if (!isSuccess) {
 		return NWakeUp_Reason::None;
+	}
 
-	if (mShould_Reload)
+	if (mShould_Reload) {
 		return NWakeUp_Reason::Reload;
+	}
 
 	return NWakeUp_Reason::Job;
 }

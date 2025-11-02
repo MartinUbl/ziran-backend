@@ -4,8 +4,8 @@
 #include <sstream>
 
 CSource_Match_Plugin::CSource_Match_Plugin(const filesystem::path& base_path, const ziran::ParamMap& params, ziran::IReporter& reporter, ziran::IEnvironment& env)
-	: mBase_Path(base_path), mReporter(reporter), mEnv(env)
-{
+	: mBase_Path(base_path), mReporter(reporter), mEnv(env) {
+
 	std::string str;
 
 	if (ziran::Param_Get(params, "wordset", str)) {
@@ -23,10 +23,12 @@ CSource_Match_Plugin::CSource_Match_Plugin(const filesystem::path& base_path, co
 	}
 
 	if (ziran::Param_Get(params, "match", str)) {
-		if (str == "positive" || str == "true")
+		if (str == "positive" || str == "true") {
 			mMust_Match = true;
-		else if (str == "negative" || str == "false")
+		}
+		else if (str == "negative" || str == "false") {
 			mMust_Match = false;
+		}
 	}
 
 	if (mExtensions.empty()) {
@@ -41,8 +43,9 @@ CSource_Match_Plugin::CSource_Match_Plugin(const filesystem::path& base_path, co
 		std::string ext;
 		std::istringstream iss(mExtensions);
 		while (std::getline(iss, ext, ',')) {
-			if (base.length() > 1)
+			if (base.length() > 1) {
 				base += "|";
+			}
 			base += "\\." + ext;
 		}
 
@@ -52,8 +55,7 @@ CSource_Match_Plugin::CSource_Match_Plugin(const filesystem::path& base_path, co
 	}
 }
 
-bool CSource_Match_Plugin::Build_Trie()
-{
+bool CSource_Match_Plugin::Build_Trie() {
 	mTrie_Nodes.resize(1);
 	mTrie_Nodes[0].id = 0;
 	mTrie_Nodes[0].sub.clear();
@@ -63,16 +65,14 @@ bool CSource_Match_Plugin::Build_Trie()
 
 		size_t idx = 0;
 
-		for (const auto& w : words)
-		{
+		for (const auto& w : words) {
 			idx = 0;
 
-			for (auto c : w)
-			{
-				if (mTrie_Nodes[idx].Can_Advance(c))
+			for (auto c : w) {
+				if (mTrie_Nodes[idx].Can_Advance(c)) {
 					idx = mTrie_Nodes[idx].Advance(c);
-				else
-				{
+				}
+				else {
 					const size_t nidx = mTrie_Nodes.size();
 					mTrie_Nodes[idx].sub[c] = nidx;
 					mTrie_Nodes.push_back({
@@ -104,37 +104,36 @@ bool CSource_Match_Plugin::Build_Trie()
 
 		build(wordSet);
 	}
-	else
+	else {
 		return false;
+	}
 
 	return true;
 }
 
-HRESULT CSource_Match_Plugin::Validate_File(const filesystem::path& path, std::vector<TFile_Match>& matches)
-{
+HRESULT CSource_Match_Plugin::Validate_File(const filesystem::path& path, std::vector<TFile_Match>& matches) {
+
 	std::ifstream fs(path.string());
 	// could not open file for some reason - this is not of concern for a plugin
-	if (!fs.is_open())
+	if (!fs.is_open()) {
 		return S_FALSE;
+	}
 
 	bool foundMatch = false;
 
 	std::string line;
-	while (std::getline(fs, line))
-	{
+	while (std::getline(fs, line)) {
 		mTrie_States.clear();
 
-		for (auto c : line)
-		{
+		for (auto c : line) {
 			mTrie_States.push_back(0);
 
-			for (auto& tr_idx : mTrie_States)
-			{
-				if (mTrie_Nodes[tr_idx].Can_Advance(c))
+			for (auto& tr_idx : mTrie_States) {
+				if (mTrie_Nodes[tr_idx].Can_Advance(c)) {
 					tr_idx = mTrie_Nodes[tr_idx].Advance(c);
+				}
 
-				if (mTrie_Nodes[tr_idx].match)
-				{
+				if (mTrie_Nodes[tr_idx].match) {
 					// found a match!
 
 					if (!mMust_Match) {
@@ -159,10 +158,8 @@ HRESULT CSource_Match_Plugin::Validate_File(const filesystem::path& path, std::v
 	return S_OK;
 }
 
-HRESULT CSource_Match_Plugin::Run()
-{
-	if (!Build_Trie())
-	{
+HRESULT CSource_Match_Plugin::Run() {
+	if (!Build_Trie()) {
 		mReporter.Report(ziran::NJob_Report_Type::Error, "Nelze sestavit ověřovací strom", "runtime");
 		return E_FAIL;
 	}
@@ -170,15 +167,16 @@ HRESULT CSource_Match_Plugin::Run()
 	std::vector<TFile_Match> matches;
 	bool validationSuccess = true;
 
-	for (auto& entry : filesystem::recursive_directory_iterator(mBase_Path))
-	{
-		if (!entry.is_regular_file())
+	for (auto& entry : filesystem::recursive_directory_iterator(mBase_Path)) {
+		if (!entry.is_regular_file()) {
 			continue;
+		}
 
 		auto ext = entry.path().extension().string();
 		std::smatch sm;
-		if (!std::regex_match(ext, sm, mExt_Regex))
+		if (!std::regex_match(ext, sm, mExt_Regex)) {
 			continue;
+		}
 
 		HRESULT res = Validate_File(entry.path(), matches);
 		validationSuccess &= Succeeded(res);

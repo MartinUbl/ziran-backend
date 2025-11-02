@@ -4,8 +4,7 @@
 #include "../../../ziran-shared/plugin.h"
 #include "../../../ziran-shared/plugin_utils.h"
 
-enum class NMatch_Mode
-{
+enum class NMatch_Mode {
 	None,
 
 	Exact,
@@ -14,8 +13,7 @@ enum class NMatch_Mode
 
 constexpr int Invalid_Exit_Code = -111222333;
 
-class CExec_Output_Match_Plugin
-{
+class CExec_Output_Match_Plugin {
 	private:
 		const filesystem::path mBase_Path;
 		NMatch_Mode mMode = NMatch_Mode::None;

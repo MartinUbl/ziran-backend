@@ -15,8 +15,7 @@
 	#endif
 
 #ifndef GUID_DEFINED
-	typedef struct GUID
-	{
+	typedef struct GUID {
 		uint32_t Data1;
 		uint16_t Data2;
 		uint16_t Data3;
@@ -28,47 +27,39 @@
 #endif
 
 	#ifdef __cplusplus
-		static inline int IsEqualGUID(const GUID& rguid1, const GUID& rguid2)
-		{
+		static inline int IsEqualGUID(const GUID& rguid1, const GUID& rguid2) {
 			return !memcmp(&rguid1, &rguid2, sizeof(GUID));
 		}
 
-		static inline bool operator==(const GUID& guidOne, const GUID& guidOther)
-		{
+		static inline bool operator==(const GUID& guidOne, const GUID& guidOther) {
 			return !!IsEqualGUID(guidOne, guidOther);
 		}
 
-		static inline bool operator!=(const GUID& guidOne, const GUID& guidOther)
-		{
+		static inline bool operator!=(const GUID& guidOne, const GUID& guidOther) {
 			return !(guidOne == guidOther);
 		}
 	#else
-		static inline int IsEqualGUID(const GUID *rguid1, const GUID *rguid2)
-		{
+		static inline int IsEqualGUID(const GUID *rguid1, const GUID *rguid2) {
 			return !memcmp(rguid1, rguid2, sizeof(GUID));
 		}
 	#endif
 #endif
 
 #ifdef __cplusplus
-	static inline bool operator<(const GUID& rguid1, const GUID& rguid2)
-	{
+	static inline bool operator<(const GUID& rguid1, const GUID& rguid2) {
 		return memcmp(&rguid1, &rguid2, sizeof(GUID)) < 0;
 	}
 
 	constexpr GUID Invalid_GUID = { 0, 0, 0, { 0, 0, 0, 0, 0, 0, 0, 0 } };
 
-	static inline bool Is_Invalid_GUID(const GUID& id)
-	{
+	static inline bool Is_Invalid_GUID(const GUID& id) {
 		return id == Invalid_GUID;
 	}
 
 	template <typename... Args>
-	bool Is_Invalid_GUID(const GUID& id, const Args&... args)
-	{
+	bool Is_Invalid_GUID(const GUID& id, const Args&... args) {
 		return Is_Invalid_GUID(id) || Is_Invalid_GUID(args...);
 	}
-
 
 	// on several systems (OS's and compilers), the lengths of standard types may vary (e.g. "unsigned long" on LLP64 vs. LP64);
 	// the C++ standard itself defines minimal length, but does not guarantee exact length on every platform;

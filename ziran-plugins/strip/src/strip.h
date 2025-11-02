@@ -4,16 +4,14 @@
 #include "../../../ziran-shared/plugin.h"
 #include "../../../ziran-shared/plugin_utils.h"
 
-enum class NStrip_Mode
-{
+enum class NStrip_Mode {
 	None,
 
 	Comments,
 	Excessive_Whitespaces,
 };
 
-class CStrip_Plugin
-{
+class CStrip_Plugin {
 	private:
 		const filesystem::path mBase_Path;
 		NStrip_Mode mMode = NStrip_Mode::None;

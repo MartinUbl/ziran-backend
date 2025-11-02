@@ -12,12 +12,10 @@
 /*
  * Existing plugin manager
  */
-class CPlugin_Mgr
-{
+class CPlugin_Mgr {
 	private:
 		// structure of loaded plugin
-		struct TLoaded_Plugin
-		{
+		struct TLoaded_Plugin {
 			ziran::TPlugin_Descriptor descriptor;
 			ziran::TDo_Run_Plugin run;
 		};
@@ -35,7 +33,7 @@ class CPlugin_Mgr
 		virtual ~CPlugin_Mgr() = default;
 
 		// loads plugins from given directory
-		bool Load_Plugins(std::vector<std::string>& log);
+		bool Load_Plugins();
 
 		// runs plugin on given job entry
 		HRESULT Run_Plugin(const GUID& id, const filesystem::path& base_directory, const std::map<std::string, std::string>& parameters, ziran::IReporter& reporter, ziran::IEnvironment& env);

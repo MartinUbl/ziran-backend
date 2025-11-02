@@ -7,27 +7,23 @@
 #include <map>
 #include <regex>
 
-struct TTrie_Node
-{
+struct TTrie_Node {
 	size_t id;
 	std::map<char, size_t> sub;
 	bool match = false;
 	std::string match_word = "";
 
-	bool Can_Advance(char c) const
-	{
+	bool Can_Advance(char c) const {
 		return sub.find(c) != sub.end();
 	}
 
-	size_t Advance(char c) const
-	{
+	size_t Advance(char c) const {
 		auto itr = sub.find(c);
 		return itr->second;
 	}
 };
 
-class CSource_Match_Plugin
-{
+class CSource_Match_Plugin {
 	private:
 		struct TFile_Match {
 			std::string filePath;

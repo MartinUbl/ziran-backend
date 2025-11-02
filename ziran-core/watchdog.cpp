@@ -4,6 +4,8 @@
 #include <chrono>
 #include <thread>
 
+#include <spdlog/spdlog.h>
+
 CWatchdog CWatchdog::sInstance;
 
 CWatchdog::CWatchdog() {
@@ -94,7 +96,7 @@ void CWatchdog::Watchdog_Thread_Fnc() {
 			std::lock_guard<std::mutex> lock(mMtx);
 			if (expired) {
 				if (mStatus != NWatchdog_Status::Expired) {
-					std::cerr << "Watchdog expired!" << std::endl;
+					spdlog::error("Watchdog expired!");
 				}
 				mStatus = NWatchdog_Status::Expired;
 			} else {

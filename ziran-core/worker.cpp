@@ -1,8 +1,9 @@
 #include "worker.h"
 #include "controller.h"
 
-filesystem::path Transfer_Job(const filesystem::path& source, const filesystem::path& destDir)
-{
+#include <spdlog/spdlog.h>
+
+filesystem::path Transfer_Job(const filesystem::path& source, const filesystem::path& destDir) {
 	auto basename = source.filename().string();
 
 	filesystem::path target = destDir / basename;
@@ -18,26 +19,30 @@ filesystem::path Transfer_Job(const filesystem::path& source, const filesystem::
 }
 
 CWorker_Pool::CWorker_Pool(CPlugin_Mgr& pluginMgr, CDatabase_Handler& database, const filesystem::path& outDir, size_t pool_size)
-	: mPlugin_Mgr(pluginMgr), mDatabase(database), mOut_Dir(outDir), mPool_Size(pool_size)
-{
+	: mPlugin_Mgr(pluginMgr), mDatabase(database), mOut_Dir(outDir), mPool_Size(pool_size) {
+
 	for (size_t i = 0; i < mPool_Size; ++i) {
 		mWorker_Threads.emplace_back(&CWorker_Pool::Worker_Thread, this, i);
 	}
 }
 
-void CWorker_Pool::Worker_Thread(size_t worker_id)
-{
-	while (true)
-	{
+void CWorker_Pool::Worker_Thread(size_t worker_id) {
+
+	while (true) {
 		std::tuple<TJob_Record, filesystem::path, ziran::IEnvironment*> job_entry;
+
+		// lock scope
 		{
 			std::unique_lock<std::mutex> lock(mQueue_Mutex);
 			mQueue_CondVar.wait(lock, [this]() { return !mJob_Queue.empty() || mTerminate; });
-			if (mTerminate && mJob_Queue.empty())
+			if (mTerminate && mJob_Queue.empty()) {
 				return;
+			}
+
 			job_entry = mJob_Queue.front();
 			mJob_Queue.pop();
 		}
+
 		const TJob_Record& jobRec = std::get<0>(job_entry);
 		const filesystem::path& jobPath = std::get<1>(job_entry);
 		ziran::IEnvironment* env = std::get<2>(job_entry);
@@ -56,16 +61,18 @@ void CWorker_Pool::Worker_Thread(size_t worker_id)
 		mDatabase.Set_Job_Output(jobRec.id, output);
 		mDatabase.Set_Job_Processed_Timestamp(jobRec.id, std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
-		//std::cout << "Finished " << entry.path().filename() << "!" << std::endl;
+		spdlog::info("Worker {} finished job {}.", worker_id, jobRec.name);
 	}
 }
 
-HRESULT CWorker_Pool::Run_Job(const TJob_Record& jobRec, const filesystem::path& jobPath, ziran::IEnvironment& env)
-{
+HRESULT CWorker_Pool::Run_Job(const TJob_Record& jobRec, const filesystem::path& jobPath, ziran::IEnvironment& env) {
+
+	// lock scope
 	{
 		std::lock_guard<std::mutex> lock(mQueue_Mutex);
 		mJob_Queue.emplace(jobRec, jobPath, &env);
 	}
+
 	mQueue_CondVar.notify_one();
 	return S_OK;
 }
