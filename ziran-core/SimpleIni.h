@@ -245,11 +245,9 @@ enum class SI_Error : int {
     SI_FILE     = -3,    //!< File error (see errno for detail error)	
 };
 
-template<typename T>
-bool operator<(const T& er, const int ref) {	
-	return static_cast<int> (er) < ref;
+bool operator<(SI_Error er, const int ref) {
+    return static_cast<int> (er) < ref;
 }
-
 
 
 #define SI_UTF8_SIGNATURE     "\xEF\xBB\xBF"

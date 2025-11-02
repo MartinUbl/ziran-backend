@@ -38,6 +38,7 @@ inline int Network_Deinit() {
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <poll.h>
 
 using SOCK = int;
 using SOCKLEN = socklen_t;
