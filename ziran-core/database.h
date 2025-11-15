@@ -73,6 +73,7 @@ class CDatabase_Handler {
 		MYSQL_STMT* mStmt_Set_Job_Output = nullptr;
 		MYSQL_STMT* mStmt_Add_Job_Report = nullptr;
 		MYSQL_STMT* mStmt_Set_Job_Processed_On = nullptr;
+		MYSQL_STMT* mStmt_Update_Plugin_Parameters = nullptr;
 
 		// loaded plugin map (database plugins)
 		std::map<int, GUID> mDatabase_Plugins;
@@ -132,4 +133,7 @@ class CDatabase_Handler {
 
 		// retrieves plugin GUID by its id
 		const GUID& Get_Plugin_GUID_By_Id(int id) const;
+
+		// updates plugin parameters hint
+		bool Update_Plugin_Parameters_Hint(const GUID& plugin_guid, const std::string& parameters_hint);
 };

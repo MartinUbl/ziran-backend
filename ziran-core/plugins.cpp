@@ -1,6 +1,7 @@
 #include "plugins.h"
 
 #include <string>
+#include <sstream>
 #include <spdlog/spdlog.h>
 
 using namespace std::string_literals;
@@ -10,7 +11,28 @@ CPlugin_Mgr::CPlugin_Mgr(const std::string& pluginDir)
 	//
 }
 
-bool CPlugin_Mgr::Load_Plugins() {
+bool CPlugin_Mgr::Load_Plugins(CDatabase_Handler& db) {
+
+	auto updatePluginParameters = [&db](ziran::TPlugin_Descriptor* descriptor) {
+		if (descriptor->parameters_count == 0 || descriptor->parameter_names == nullptr || descriptor->parameter_descriptions == nullptr || descriptor->parameter_flags == nullptr) {
+			db.Update_Plugin_Parameters_Hint(descriptor->id, "");
+			return;
+		}
+
+		std::ostringstream paramString;
+		for (size_t i = 0; i < descriptor->parameters_count; i++) {
+			paramString << descriptor->parameter_names[i] << ":\"" << descriptor->parameter_descriptions[i] << "\"|";
+			const auto flags = descriptor->parameter_flags[i];
+			if (flags & ziran::NPlugin_Parameter_Flags::Mandatory) {
+				paramString << "M";
+			}
+			else {
+				paramString << "0";
+			}
+			paramString << ";";
+		}
+		db.Update_Plugin_Parameters_Hint(descriptor->id, paramString.str());
+	};
 
 	// go through all files in given directory
 	for (auto& libpath : filesystem::directory_iterator(mPlugin_Directory)) {
@@ -55,6 +77,8 @@ bool CPlugin_Mgr::Load_Plugins() {
 		// fetch descriptors and store them to internal map
 		for (auto* d = begin; d < end; d++) {
 			spdlog::info("Loaded plugin: {} from {}", d->name, libpath.path().filename().string());
+
+			updatePluginParameters(d);
 
 			mLoaded_Plugins[d->id] = TLoaded_Plugin{
 				*d,

@@ -1,4 +1,5 @@
 #include "plugin_utils.h"
+#include "plugin.h"
 
 #include <algorithm>
 #include <array>
@@ -8,7 +9,18 @@
 #include <sstream>
 #include <unordered_map>
 
+#undef max
+#undef min
+
 namespace ziran {
+
+	bool operator&(NPlugin_Parameter_Flags a, NPlugin_Parameter_Flags b) {
+		return (static_cast<uint8_t>(a) & static_cast<uint8_t>(b)) != 0;
+	}
+
+	NPlugin_Parameter_Flags operator|(NPlugin_Parameter_Flags a, NPlugin_Parameter_Flags b) {
+		return static_cast<NPlugin_Parameter_Flags>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
+	}
 
 	ParamMap Map_From_Param_Arrays(const char** keys, const char** values, const size_t sizes) {
 		if (!keys || !values || sizes == 0) {

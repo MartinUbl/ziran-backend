@@ -11,7 +11,11 @@ namespace build_cmake {
 
 	ziran::TPlugin_Descriptor desc{
 		id,
-		"build-cmake"
+		"build-cmake",
+		0,
+		nullptr,
+		nullptr,
+		nullptr
 	};
 }
 

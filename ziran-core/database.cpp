@@ -32,6 +32,7 @@ bool CDatabase_Handler::Close() {
 	stmt_close(mStmt_Set_Job_Status);
 	stmt_close(mStmt_Set_Job_Output);
 	stmt_close(mStmt_Add_Job_Report);
+	stmt_close(mStmt_Update_Plugin_Parameters);
 
 	// terminate connection
 	if (mConnection) {
@@ -96,7 +97,8 @@ bool CDatabase_Handler::Init_Statements() {
 		{ mStmt_Set_Job_Status, "UPDATE job SET status = ? WHERE id = ?" },
 		{ mStmt_Set_Job_Output, "UPDATE job SET output = ? WHERE id = ?"},
 		{ mStmt_Add_Job_Report, "INSERT INTO job_report (job_id, log_type, log_identifier, value, extended_value) VALUES (?, ?, ?, ?, ?)" },
-		{ mStmt_Set_Job_Processed_On, "UPDATE job SET processed_on = FROM_UNIXTIME(?) WHERE id = ?" }
+		{ mStmt_Set_Job_Processed_On, "UPDATE job SET processed_on = FROM_UNIXTIME(?) WHERE id = ?" },
+		{ mStmt_Update_Plugin_Parameters, "UPDATE plugin SET parameters_hint = ? WHERE guid = ?" }
 	};
 
 	// prepare all
@@ -672,4 +674,39 @@ std::map<std::string, std::string> CDatabase_Handler::Parse_Parameters(const std
 	}
 
 	return m;
+}
+
+bool CDatabase_Handler::Update_Plugin_Parameters_Hint(const GUID& plugin_guid, const std::string& parameters_hint) {
+
+	MYSQL_BIND param_bind[2];
+
+	memset(param_bind, 0, sizeof(param_bind));
+
+	const std::string guid_as_str = GUID_To_String(plugin_guid);
+
+	unsigned long parLen1 = static_cast<unsigned long>(parameters_hint.size());
+	param_bind[0].buffer_type = MYSQL_TYPE_STRING;
+	param_bind[0].buffer = const_cast<char*>(parameters_hint.c_str());
+	param_bind[0].is_null = 0;
+	param_bind[0].buffer_length = parLen1;
+	param_bind[0].length = &parLen1;
+
+	unsigned long parLen2 = static_cast<unsigned long>(guid_as_str.size());
+	param_bind[1].buffer_type = MYSQL_TYPE_STRING;
+	param_bind[1].buffer = const_cast<char*>(guid_as_str.c_str());
+	param_bind[1].is_null = 0;
+	param_bind[1].buffer_length = parLen2;
+	param_bind[1].length = &parLen2;
+
+	if (mysql_stmt_bind_param(mStmt_Update_Plugin_Parameters, param_bind) != 0) {
+		return false;
+	}
+
+	if (mysql_stmt_execute(mStmt_Update_Plugin_Parameters) != 0) {
+		return false;
+	}
+
+	mysql_stmt_reset(mStmt_Update_Plugin_Parameters);
+
+	return true;
 }

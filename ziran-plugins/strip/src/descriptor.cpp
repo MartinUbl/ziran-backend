@@ -8,9 +8,25 @@
 namespace strip {
 	constexpr const GUID id = { 0xfbd1952d, 0x4cbc, 0x4387, { 0x9e, 0xbb, 0x9f, 0x16, 0x9c, 0xae, 0xec, 0x63 } }; // {FBD1952D-4CBC-4387-9EBB-9F169CAEEC63}
 
+	const char* const parameter_names[] = {
+		"mode",
+	};
+
+	const char* const parameter_descriptions[] = {
+		"Stripping mode (whitespace, comments)",
+	};
+
+	const ziran::NPlugin_Parameter_Flags parameter_flags[] = {
+		ziran::NPlugin_Parameter_Flags::Mandatory,
+	};
+
 	ziran::TPlugin_Descriptor desc{
 		id,
-		"strip"
+		"strip",
+		1,
+		parameter_names,
+		parameter_descriptions,
+		parameter_flags
 	};
 }
 

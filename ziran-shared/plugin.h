@@ -14,6 +14,15 @@ namespace ziran {
 		Error,		// db value 'error'
 	};
 
+	enum class NPlugin_Parameter_Flags : uint8_t {
+		None = 0x00,
+		Mandatory = 0x01,
+	};
+
+	bool operator&(NPlugin_Parameter_Flags a, NPlugin_Parameter_Flags b);
+
+	NPlugin_Parameter_Flags operator|(NPlugin_Parameter_Flags a, NPlugin_Parameter_Flags b);
+
 	/*
 	 * Interface for job message reporting
 	 */
@@ -47,6 +56,10 @@ namespace ziran {
 	struct TPlugin_Descriptor {
 		GUID id;
 		const char* name;
+		size_t parameters_count;
+		const char* const* parameter_names;
+		const char* const* parameter_descriptions;
+		const NPlugin_Parameter_Flags* parameter_flags;
 	};
 
 	// usual signature: extern "C" HRESULT do_get_plugin_descriptors(ziran::TPlugin_Descriptor** begin, ziran::TPlugin_Descriptor** end)

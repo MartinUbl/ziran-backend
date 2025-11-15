@@ -8,9 +8,34 @@
 namespace source_match {
 	constexpr const GUID id = { 0x94f865d8, 0x4b6d, 0x4b9e, { 0xa5, 0x7a, 0x28, 0xf5, 0x53, 0x18, 0x12, 0x4 } };; // {94F865D8-4B6D-4B9E-A57A-28F553181204}
 
+	const char* const parameter_names[] = {
+		"wordset",
+		"extensions",
+		"extensions_regex",
+		"match"
+	};
+
+	const char* const parameter_descriptions[] = {
+		"Wordset (inputs)",
+		"Comma-separated list of file extensions to check (e.g., 'cpp,h,txt')",
+		"Regex defining file extensions to check",
+		"Whether to perform a positive ('true') or negative ('false') match"
+	};
+
+	const ziran::NPlugin_Parameter_Flags parameter_flags[] = {
+		ziran::NPlugin_Parameter_Flags::Mandatory,
+		ziran::NPlugin_Parameter_Flags::None,
+		ziran::NPlugin_Parameter_Flags::None,
+		ziran::NPlugin_Parameter_Flags::None
+	};
+
 	ziran::TPlugin_Descriptor desc{
 		id,
-		"source-match"
+		"source-match",
+		4,
+		parameter_names,
+		parameter_descriptions,
+		parameter_flags
 	};
 }
 

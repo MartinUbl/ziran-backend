@@ -8,9 +8,25 @@
 namespace clang_tidy {
 	constexpr const GUID id = { 0xab73ed9b, 0xddf0, 0x4c30, { 0x8d, 0xf4, 0x93, 0xad, 0x22, 0x74, 0x19, 0x3e } }; // {AB73ED9B-DDF0-4C30-8DF4-93AD2274193E}
 
+	const char* const parameter_names[] = {
+		"ruleset",
+	};
+
+	const char* const parameter_descriptions[] = {
+		"Clang-Tidy ruleset to apply (e.g., 'modernize-*', 'cppcoreguidelines-*', 'readability-*', etc.)",
+	};
+
+	const ziran::NPlugin_Parameter_Flags parameter_flags[] = {
+		ziran::NPlugin_Parameter_Flags::Mandatory,
+	};
+
 	ziran::TPlugin_Descriptor desc{
 		id,
-		"clang-tidy"
+		"clang-tidy",
+		1,
+		parameter_names,
+		parameter_descriptions,
+		parameter_flags
 	};
 }
 

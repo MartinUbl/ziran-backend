@@ -91,11 +91,6 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	// then load plugins
-	if (!Startup_Routine("plugins/load", std::bind(&CPlugin_Mgr::Load_Plugins, &mgr))) {
-		return 2;
-	}
-
 	// connect to database
 	if (!Startup_Routine("database/connect", std::bind(&CDatabase_Handler::Connect, &db, cfg.dbHost, cfg.dbPort, cfg.dbUser, cfg.dbPassword, cfg.dbName))) {
 		return 3;
@@ -129,6 +124,11 @@ int main(int argc, char** argv) {
 	// load pipeline items
 	if (!Startup_Routine("database/pipeline_items", std::bind(&CDatabase_Handler::Load_DB_Pipeline_Items, &db))) {
 		return 4;
+	}
+
+	// then load plugins
+	if (!Startup_Routine("plugins/load", std::bind(&CPlugin_Mgr::Load_Plugins, &mgr, db))) {
+		return 2;
 	}
 
 	// start job manager

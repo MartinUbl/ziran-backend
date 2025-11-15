@@ -4,6 +4,8 @@
 #include <vector>
 #include <map>
 
+#include "database.h"
+
 #include "../ziran-shared/plugin.h"
 
 #include "../ziran-shared/FilesystemLib.h"
@@ -33,7 +35,7 @@ class CPlugin_Mgr {
 		virtual ~CPlugin_Mgr() = default;
 
 		// loads plugins from given directory
-		bool Load_Plugins();
+		bool Load_Plugins(CDatabase_Handler& db);
 
 		// runs plugin on given job entry
 		HRESULT Run_Plugin(const GUID& id, const filesystem::path& base_directory, const std::map<std::string, std::string>& parameters, ziran::IReporter& reporter, ziran::IEnvironment& env);
