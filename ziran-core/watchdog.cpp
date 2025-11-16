@@ -1,4 +1,5 @@
 #include "watchdog.h"
+#include "worker.h"
 
 #include <iostream>
 #include <chrono>
@@ -16,7 +17,7 @@ CWatchdog::~CWatchdog() {
 	//
 }
 
-void CWatchdog::Start(const std::string& wdFilePath) {
+void CWatchdog::Start(const std::string& wdFilePath, std::weak_ptr<CWorker_Pool> workerPool) {
 	if (mRunning) {
 		return;
 	}
@@ -25,6 +26,8 @@ void CWatchdog::Start(const std::string& wdFilePath) {
 	if (!mWatchdog_File.is_open()) {
 		throw std::runtime_error("Failed to open watchdog file: " + wdFilePath);
 	}
+
+	mWorker_Pool = workerPool;
 
 	// initialize last kick times
 	auto now = std::chrono::steady_clock::now();
@@ -62,7 +65,7 @@ void CWatchdog::Kick(NWatchdog_Source source) {
 }
 
 void CWatchdog::Watchdog_Thread_Fnc() {
-	const auto check_interval = std::chrono::milliseconds(1000);
+	const auto check_interval = std::chrono::milliseconds(Watchdog_Check_Interval_MS);
 	while (true) {
 		// wait for the next check or stop signal
 		{
@@ -133,6 +136,35 @@ void CWatchdog::Write_Status() {
 			break;
 	}
 	mWatchdog_File << std::endl;
+
+	if (auto pool = mWorker_Pool.lock()) {
+		const auto& worker_states = pool->Get_Worker_States();
+		mWatchdog_File << "WORKERS: ";
+		for (size_t i = 0; i < worker_states.size(); ++i) {
+			switch (worker_states[i]) {
+				case TWorker_State::Not_Started:
+					mWatchdog_File << "N";
+					break;
+				case TWorker_State::Idle:
+					mWatchdog_File << "I";
+					break;
+				case TWorker_State::Working:
+					mWatchdog_File << "W";
+					break;
+				case TWorker_State::Terminated:
+					mWatchdog_File << "T";
+					break;
+			}
+			if (i + 1 < worker_states.size()) {
+				mWatchdog_File << ",";
+			}
+		}
+		mWatchdog_File << std::endl;
+	}
+	else {
+		mWatchdog_File << "WORKERS: N/A" << std::endl;
+	}
+
 	if (mStatus == NWatchdog_Status::Expired) {
 		mWatchdog_File << "EXPIRED_SOURCES: ";
 		for (const auto& [source, kick_time] : mLast_Kick_Times) {

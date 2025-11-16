@@ -20,4 +20,6 @@ struct TConfig {
 	std::string dbName = "ziran";
 
 	std::string watchdogFile = "ziran.wd";
+
+	uint16_t workerPoolSize = 0; // 0 = auto (number of hardware threads)
 };

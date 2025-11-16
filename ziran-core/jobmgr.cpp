@@ -1,10 +1,17 @@
 #include "jobmgr.h"
 #include "watchdog.h"
+#include "defines.h"
 
 #include <array>
 #include <string_view>
 
 #include <spdlog/spdlog.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
+#include <poll.h>
+#endif
 
 CJob_Mgr::CJob_Mgr(const TConfig& cfg) : mConfig(cfg) {
 	//

@@ -8,7 +8,11 @@
 #include <memory>
 #include <fstream>
 
-constexpr size_t Watchdog_Kick_Timeout_MS = 5000;
+class CWorker_Pool;
+
+constexpr size_t Watchdog_Check_Interval_MS = 2000;
+
+constexpr size_t Watchdog_Kick_Timeout_MS = 6500;
 
 enum class NWatchdog_Source {
 	Periodic_Check,
@@ -42,6 +46,8 @@ class CWatchdog final {
 
 		std::map<NWatchdog_Source, std::chrono::steady_clock::time_point> mLast_Kick_Times;
 
+		std::weak_ptr<CWorker_Pool> mWorker_Pool;
+
 	protected:
 		void Watchdog_Thread_Fnc();
 
@@ -50,7 +56,11 @@ class CWatchdog final {
 	public:
 		CWatchdog();
 		~CWatchdog();
-		void Start(const std::string& wdFilePath);
+
+		CWatchdog(const CWatchdog&) = delete;
+		CWatchdog& operator=(const CWatchdog&) = delete;
+
+		void Start(const std::string& wdFilePath, std::weak_ptr<CWorker_Pool> workerPool);
 		void Stop();
 		void Kick(NWatchdog_Source source);
 

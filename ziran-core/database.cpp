@@ -322,11 +322,6 @@ TJob_Record CDatabase_Handler::Get_Job_By_Name(const std::string& job_name) {
 	char namebuf[64], statusbuf[16], outputbuf[16];
 	unsigned long namelen, statuslen, outputlen;
 
-	metaData = mysql_stmt_result_metadata(mStmt_Get_Job_By_Name);
-	if (!metaData) {
-		return { Invalid_Job_Id };
-	}
-
 	unsigned long parLen = static_cast<unsigned long>(job_name.size());
 	memset(&param_bind, 0, sizeof(MYSQL_BIND));
 	param_bind.buffer_type = MYSQL_TYPE_STRING;
@@ -334,6 +329,24 @@ TJob_Record CDatabase_Handler::Get_Job_By_Name(const std::string& job_name) {
 	param_bind.is_null = 0;
 	param_bind.buffer_length = parLen;
 	param_bind.length = &parLen;
+
+	auto result = mysql_stmt_bind_param(mStmt_Get_Job_By_Name, &param_bind);
+	if (result != 0) {
+		spdlog::error("Could not bind parameters for Get_Job_By_Name: {}", mysql_stmt_error(mStmt_Get_Job_By_Name));
+		return { Invalid_Job_Id };
+	}
+
+	result = mysql_stmt_execute(mStmt_Get_Job_By_Name);
+	if (result != 0) {
+		spdlog::error("Could not execute statement for Get_Job_By_Name: {}", mysql_stmt_error(mStmt_Get_Job_By_Name));
+		return { Invalid_Job_Id };
+	}
+
+	metaData = mysql_stmt_result_metadata(mStmt_Get_Job_By_Name);
+	if (!metaData) {
+		spdlog::error("Could not retrieve metadata for Get_Job_By_Name: {}", mysql_stmt_error(mStmt_Get_Job_By_Name));
+		return { Invalid_Job_Id };
+	}
 
 	fields = mysql_fetch_fields(metaData);
 	memset(bind, 0, sizeof(bind));
@@ -363,18 +376,9 @@ TJob_Record CDatabase_Handler::Get_Job_By_Name(const std::string& job_name) {
 	bind[4].buffer = &jobrec.pipeline_id;
 	bind[4].is_null = &isnull[4];
 
-	auto result = mysql_stmt_bind_param(mStmt_Get_Job_By_Name, &param_bind);
-	if (result != 0) {
-		return { Invalid_Job_Id };
-	}
-
 	result = mysql_stmt_bind_result(mStmt_Get_Job_By_Name, bind);
 	if (result != 0) {
-		return { Invalid_Job_Id };
-	}
-
-	result = mysql_stmt_execute(mStmt_Get_Job_By_Name);
-	if (result != 0) {
+		spdlog::error("Could not bind result for Get_Job_By_Name: {}", mysql_stmt_error(mStmt_Get_Job_By_Name));
 		return { Invalid_Job_Id };
 	}
 

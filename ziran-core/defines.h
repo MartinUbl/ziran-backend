@@ -4,7 +4,8 @@
 
 #define DLLEXPORT __declspec(dllexport)
 
-#include <WS2tcpip.h>
+//#include <winsock.h>
+//#include <WS2tcpip.h>
 #include <WinSock2.h>
 
 using SOCK = SOCKET;

@@ -22,13 +22,19 @@ CWorker_Pool::CWorker_Pool(CPlugin_Mgr& pluginMgr, CDatabase_Handler& database, 
 	: mPlugin_Mgr(pluginMgr), mDatabase(database), mOut_Dir(outDir), mPool_Size(pool_size) {
 
 	for (size_t i = 0; i < mPool_Size; ++i) {
+		mWorker_States.push_back(TWorker_State::Not_Started);
 		mWorker_Threads.emplace_back(&CWorker_Pool::Worker_Thread, this, i);
 	}
 }
 
 void CWorker_Pool::Worker_Thread(size_t worker_id) {
 
+	spdlog::info("Worker {} started.", worker_id);
+
 	while (true) {
+
+		mWorker_States[worker_id] = TWorker_State::Idle;
+
 		std::tuple<TJob_Record, filesystem::path, ziran::IEnvironment*> job_entry;
 
 		// lock scope
@@ -42,6 +48,8 @@ void CWorker_Pool::Worker_Thread(size_t worker_id) {
 			job_entry = mJob_Queue.front();
 			mJob_Queue.pop();
 		}
+
+		mWorker_States[worker_id] = TWorker_State::Working;
 
 		const TJob_Record& jobRec = std::get<0>(job_entry);
 		const filesystem::path& jobPath = std::get<1>(job_entry);
@@ -63,6 +71,10 @@ void CWorker_Pool::Worker_Thread(size_t worker_id) {
 
 		spdlog::info("Worker {} finished job {}.", worker_id, jobRec.name);
 	}
+
+	spdlog::info("Worker {} terminating.", worker_id);
+
+	mWorker_States[worker_id] = TWorker_State::Terminated;
 }
 
 HRESULT CWorker_Pool::Run_Job(const TJob_Record& jobRec, const filesystem::path& jobPath, ziran::IEnvironment& env) {

@@ -41,6 +41,9 @@ class CPipeline_Ctl {
 	public:
 		CPipeline_Ctl(CDatabase_Handler& db, CPlugin_Mgr& plugins, const TJob_Record& job);
 
+		CPipeline_Ctl(const CPipeline_Ctl&) = delete;
+		CPipeline_Ctl& operator=(const CPipeline_Ctl&) = delete;
+
 		// run the job pipeline, return success indicator
 		NJob_Output Run(const filesystem::path& path, ziran::IEnvironment& env);
 };

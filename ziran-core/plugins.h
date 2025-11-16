@@ -34,6 +34,9 @@ class CPlugin_Mgr {
 		CPlugin_Mgr(const std::string& pluginDir);
 		virtual ~CPlugin_Mgr() = default;
 
+		CPlugin_Mgr(const CPlugin_Mgr&) = delete;
+		CPlugin_Mgr& operator=(const CPlugin_Mgr&) = delete;
+
 		// loads plugins from given directory
 		bool Load_Plugins(CDatabase_Handler& db);
 

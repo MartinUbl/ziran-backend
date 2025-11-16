@@ -56,6 +56,19 @@ int main(int argc, char** argv) {
 			cfg.discardDir = conf.GetValue("core", "discard_dir", cfg.discardDir.string().c_str());
 			cfg.watchdogFile = conf.GetValue("core", "watchdog_file", cfg.watchdogFile.c_str());
 
+			if (filesystem::path(cfg.watchdogFile).is_relative()) {
+				cfg.watchdogFile = (Get_Application_Dir() / cfg.watchdogFile).string();
+			}
+
+			cfg.workerPoolSize = static_cast<uint16_t>(conf.GetLongValue("core", "worker_pool_size", cfg.workerPoolSize));
+			if (cfg.workerPoolSize == 0) {
+				cfg.workerPoolSize = static_cast<uint16_t>(std::thread::hardware_concurrency());
+			}
+			else if (cfg.workerPoolSize > 128) {
+				spdlog::warn("worker pool size too large, capping to 128");
+				cfg.workerPoolSize = 128;
+			}
+
 			cfg.bindIpString = conf.GetValue("listener", "bind_ip", cfg.bindIpString.c_str());
 			long bindport = conf.GetLongValue("listener", "port", cfg.bindPort);
 			if (bindport < 0 || bindport > 65535) {
@@ -127,7 +140,7 @@ int main(int argc, char** argv) {
 	}
 
 	// then load plugins
-	if (!Startup_Routine("plugins/load", std::bind(&CPlugin_Mgr::Load_Plugins, &mgr, db))) {
+	if (!Startup_Routine("plugins/load", std::bind(&CPlugin_Mgr::Load_Plugins, &mgr, std::ref(db)))) {
 		return 2;
 	}
 
@@ -180,11 +193,11 @@ int main(int argc, char** argv) {
 
 	spdlog::info("Starting worker pool...");
 
-	CWorker_Pool workerPool(mgr, db, cfg.outDir, 1);// std::thread::hardware_concurrency());
+	std::shared_ptr<CWorker_Pool> workerPool = std::make_shared<CWorker_Pool>(mgr, db, cfg.outDir, cfg.workerPoolSize);
 
 	// start watchdog
 	spdlog::info("Starting watchdog...");
-	CWatchdog::Get_Instance().Start((Get_Application_Dir() / cfg.watchdogFile).string());
+	CWatchdog::Get_Instance().Start(cfg.watchdogFile, workerPool);
 
 	while (true) {
 		CWatchdog::Get_Instance().Kick(NWatchdog_Source::Periodic_Check);
@@ -202,7 +215,7 @@ int main(int argc, char** argv) {
 				TJob_Record rec = db.Get_Job_By_Name(entry.path().filename().string());
 				if (rec.id == Invalid_Job_Id) {
 					spdlog::warn("Discarding {} (job not in database)...", entry.path().filename().string());
-					Transfer_Job(entry.path(), cfg.discardDir);
+					//Transfer_Job(entry.path(), cfg.discardDir);
 				}
 				// it must also not be in "Done" state, that would indicate an error during processing
 				else if (rec.status == NJob_Status::Done) {
@@ -215,7 +228,7 @@ int main(int argc, char** argv) {
 					// transfer job to work directory and change status
 					const filesystem::path work_dest = Transfer_Job(entry.path(), cfg.workDir);
 
-					workerPool.Run_Job(rec, work_dest, env);
+					workerPool->Run_Job(rec, work_dest, env);
 				}
 			}
 			else {

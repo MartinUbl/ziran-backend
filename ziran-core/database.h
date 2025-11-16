@@ -92,6 +92,10 @@ class CDatabase_Handler {
 		CDatabase_Handler();
 		virtual ~CDatabase_Handler();
 
+		// non-copyable
+		CDatabase_Handler(const CDatabase_Handler&) = delete;
+		CDatabase_Handler& operator=(const CDatabase_Handler&) = delete;
+
 		// connects to a MySQL database using given credentials and specifiers
 		bool Connect(const std::string& host, uint16_t port, const std::string& username, const std::string& password, const std::string& dbname);
 

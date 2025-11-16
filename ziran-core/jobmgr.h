@@ -39,6 +39,9 @@ class CJob_Mgr {
 	public:
 		CJob_Mgr(const TConfig& cfg);
 
+		CJob_Mgr(const CJob_Mgr&) = delete;
+		CJob_Mgr& operator=(const CJob_Mgr&) = delete;
+
 		bool Start();
 		void Stop();
 

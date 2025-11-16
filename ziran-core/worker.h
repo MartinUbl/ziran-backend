@@ -14,6 +14,13 @@
 // transfer job from one directory to another, resolves name conflicts if needed
 filesystem::path Transfer_Job(const filesystem::path& source, const filesystem::path& destDir);
 
+enum class TWorker_State {
+	Not_Started,
+	Idle,
+	Working,
+	Terminated
+};
+
 class CWorker_Pool {
 	private:
 		CPlugin_Mgr& mPlugin_Mgr;
@@ -28,12 +35,21 @@ class CWorker_Pool {
 		std::queue<std::tuple<TJob_Record, filesystem::path, ziran::IEnvironment*>> mJob_Queue;
 		bool mTerminate = false;
 
+		std::vector<TWorker_State> mWorker_States;
+
 	private:
 		void Worker_Thread(size_t worker_id);
 
 	public:
 		CWorker_Pool(CPlugin_Mgr& pluginMgr, CDatabase_Handler& database, const filesystem::path& outDir, size_t pool_size = 1);
 		virtual ~CWorker_Pool() = default;
+
+		CWorker_Pool(const CWorker_Pool&) = delete;
+		CWorker_Pool& operator=(const CWorker_Pool&) = delete;
+
+		const std::vector<TWorker_State>& Get_Worker_States() const {
+			return mWorker_States;
+		}
 
 		// runs a job identified by its record on given path
 		HRESULT Run_Job(const TJob_Record& jobRec, const filesystem::path& jobPath, ziran::IEnvironment& env);
